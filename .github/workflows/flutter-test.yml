@@ -1,0 +1,108 @@
+name: vioo_app
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # Fast job: quick feedback on pushes/PRs (ubuntu + stable)
+  vioo_app_fast:
+    name: Run vioo_app (fast)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Set up Flutter (stable)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Enable Flutter (pre-cache)
+        run: flutter doctor -v
+
+      - name: Cache pub packages (fast)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            ~/flutter/.pub-cache
+          key: ${{ runner.os }}-pub-stable-${{ hashFiles('**/flutter_app/pubspec.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-stable-
+
+      - name: Cache Flutter SDK (fast)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/flutter
+            ~/.cache/flutter
+          key: ${{ runner.os }}-flutter-stable
+          restore-keys: |
+            ${{ runner.os }}-flutter-
+
+      - name: Install dependencies (fast)
+        run: |
+          cd flutter_app
+          flutter pub get
+
+      
+
+      - name: Run tests (fast)
+        run: |
+          cd flutter_app
+          flutter test
+
+  # Full matrix: broader coverage, runs only for pull requests to keep pushes fast
+  vioo_app:
+    name: Run vioo_app tests
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        channel: [stable, beta]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: ${{ matrix.channel }}
+
+      - name: Enable Flutter (pre-cache)
+        run: flutter doctor -v
+
+      - name: Cache pub packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            ~/flutter/.pub-cache
+          key: ${{ runner.os }}-pub-${{ matrix.channel }}-${{ hashFiles('**/flutter_app/pubspec.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-${{ matrix.channel }}-
+
+      - name: Install dependencies
+        run: |
+          cd flutter_app
+          flutter pub get
+
+
+      - name: Static analysis
+        run: |
+          cd flutter_app
+          flutter analyze
+
+      - name: Run tests
+        run: |
+          cd flutter_app
+          flutter test --coverage
+      
