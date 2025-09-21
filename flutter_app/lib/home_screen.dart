@@ -31,9 +31,13 @@ class HomeScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text(title,
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
-                  Text(description, style: const TextStyle(fontSize: 13, color: Colors.black87)),
+                  Text(description,
+                      style:
+                          const TextStyle(fontSize: 13, color: Colors.black87)),
                 ],
               ),
             ),
@@ -68,13 +72,15 @@ class HomeScreen extends StatelessWidget {
             _featureCard(
               icon: Icons.anchor,
               title: '3-Second Hooks',
-              description: "Generate scripts with hooks every 3 seconds to keep 'em engaged",
+              description:
+                  "Generate scripts with hooks every 3 seconds to keep 'em engaged",
               onPressed: () => Navigator.pushNamed(context, '/config'),
             ),
             _featureCard(
               icon: Icons.sentiment_satisfied,
               title: 'Fallacy Fighter',
-              description: 'Identify and respond to common fallacies gracefully',
+              description:
+                  'Identify and respond to common fallacies gracefully',
               onPressed: () {},
             ),
             _featureCard(
@@ -82,6 +88,12 @@ class HomeScreen extends StatelessWidget {
               title: 'Rebuttal + Action',
               description: 'Quick rebuttals with a suggested next action',
               onPressed: () {},
+            ),
+            _featureCard(
+              icon: Icons.mic,
+              title: 'Transcription (Beta)',
+              description: 'Test local speech-to-text from mic or audio clips',
+              onPressed: () => Navigator.pushNamed(context, '/transcription'),
             ),
             const SizedBox(height: 12),
             // Expand to push content to top if needed

@@ -2,7 +2,8 @@ import '../models/script_segment.dart';
 
 class ScriptGenerator {
   // Simple static generator; no external dependencies.
-  static List<ScriptSegment> generateScript(String topic, int length, String style) {
+  static List<ScriptSegment> generateScript(
+      String topic, int length, String style) {
     final segments = <ScriptSegment>[];
     final int segmentCount = (length / 3).ceil();
     final seed = DateTime.now().millisecond;
@@ -21,14 +22,16 @@ class ScriptGenerator {
             ? 'Vote like it\'s a party — $topic matters!'
             : 'Make your voice heard about $topic — do it with a smile.';
         onScreen = flip ? 'Vote. Party. Repeat.' : 'Make it count';
-        visuals = flip ? 'Confetti, people cheering' : 'Person dancing to ballot box';
+        visuals =
+            flip ? 'Confetti, people cheering' : 'Person dancing to ballot box';
       } else {
         // Educational default
         voiceover = flip
             ? 'Voting empowers you: $topic explained in simple terms.'
             : 'Learn how $topic impacts your community — and why your vote matters.';
         onScreen = flip ? 'Your Vote Counts' : '$topic: Why it matters';
-        visuals = flip ? 'Ballot box, checklist' : 'Community meeting, infographic';
+        visuals =
+            flip ? 'Ballot box, checklist' : 'Community meeting, infographic';
       }
 
       // Slightly vary by segment index to avoid exact repeats

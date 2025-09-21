@@ -41,6 +41,10 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Microphone access lets Vote In Or Out capture clips for on-device transcription.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Speech recognition powers the local transcription feature to turn your audio into scripts.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>

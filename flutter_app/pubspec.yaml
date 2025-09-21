@@ -10,6 +10,11 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.2
+  http: ^1.2.0  # For OpenAI API calls
+  speech_to_text: ^6.6.0  # For local transcription
+  just_audio: ^0.9.36  # Playback for feeding audio into speech recognizer
+  tflite_flutter: ^0.10.3  # Local LLM fallback inference
+  flutter_dotenv: ^5.1.0  # Environment-based configuration
 
 dev_dependencies:
   flutter_test:
@@ -18,3 +23,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/models/local_llm.tflite
+    - .env

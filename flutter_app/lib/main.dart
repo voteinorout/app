@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
-import 'screens/config_screen.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:vioo_app/voteinorout/app/transcription_service.dart';
+import 'screens/config_screen.dart';
+import 'screens/transcription_screen.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: '.env');
+  await TranscriptionService.init();
   runApp(const VoteInOrOutApp());
 }
 
@@ -38,6 +44,7 @@ class VoteInOrOutApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(),
         '/config': (context) => const ConfigScreen(),
         '/script': (context) => const ScriptScreen(),
+        '/transcription': (context) => const TranscriptionScreen(),
       },
     );
   }
@@ -104,6 +111,11 @@ class HomeScreen extends StatelessWidget {
               onPressed: () => Navigator.of(context).pushNamed('/script'),
               child: const Text('Script Builder'),
             ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pushNamed('/transcription'),
+              child: const Text('Transcription (beta)'),
+            ),
           ],
         ),
       ),
@@ -126,14 +138,17 @@ class ScriptScreen extends StatelessWidget {
     final buffer = StringBuffer();
     buffer.writeln('$style short video about $topic');
     buffer.writeln();
-    buffer.writeln('Open: Hook the viewer in the first 3 seconds with a strong claim or surprising fact about $topic.');
+    buffer.writeln(
+        'Open: Hook the viewer in the first 3 seconds with a strong claim or surprising fact about $topic.');
     buffer.writeln();
-    buffer.writeln('Body: Deliver the main payoff clearly. Keep it concise — aim for ${length}s total.');
+    buffer.writeln(
+        'Body: Deliver the main payoff clearly. Keep it concise — aim for ${length}s total.');
     buffer.writeln();
     if (cta != null && cta.isNotEmpty) {
       buffer.writeln('Close: $cta');
     } else {
-      buffer.writeln('Close: Encourage the viewer to learn more or take action.');
+      buffer
+          .writeln('Close: Encourage the viewer to learn more or take action.');
     }
 
     return buffer.toString();
@@ -141,7 +156,8 @@ class ScriptScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final script = _buildScript(args ?? {});
 
     return Scaffold(
@@ -180,7 +196,8 @@ class ScriptScreen extends StatelessWidget {
                       // Copy to clipboard
                       Clipboard.setData(ClipboardData(text: script));
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Script copied to clipboard')),
+                        const SnackBar(
+                            content: Text('Script copied to clipboard')),
                       );
                     },
                     child: const Text('Copy script'),
@@ -219,16 +236,16 @@ MaterialColor createMaterialColor(Color color) {
     // Map strength [0.0 .. 1.0] to a lightness adjustment around current value.
     final double ds = (strength - 0.5) * 1.0; // range roughly -0.45 .. 0.4
     double newLightness = (hsl.lightness + ds).clamp(0.0, 1.0);
-    swatch[(strength * 1000).round()] = hsl.withLightness(newLightness).toColor();
+    swatch[(strength * 1000).round()] =
+        hsl.withLightness(newLightness).toColor();
   }
 
   // Normalize keys to 50..900 as required by MaterialColor
   final normalized = <int, Color>{};
   int i = 0;
-  for (var key in [50,100,200,300,400,500,600,700,800,900]) {
+  for (var key in [50, 100, 200, 300, 400, 500, 600, 700, 800, 900]) {
     normalized[key] = swatch.values.elementAt(i);
     i++;
   }
   return MaterialColor(color.toARGB32(), normalized);
 }
-
