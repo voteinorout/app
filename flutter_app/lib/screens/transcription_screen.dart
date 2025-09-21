@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:vioo_app/voteinorout/app/transcription_service.dart';
 
 class TranscriptionScreen extends StatefulWidget {
-  const TranscriptionScreen({Key? key}) : super(key: key);
+  const TranscriptionScreen({super.key});
 
   @override
   State<TranscriptionScreen> createState() => _TranscriptionScreenState();
@@ -127,39 +127,38 @@ class _TranscriptionScreenState extends State<TranscriptionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Transcription (Beta)')),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
                 'Local transcription runs on-device using Apple Speech (iOS) or SpeechRecognizer (Android). '
                 'Provide an audio file path or capture a quick mic sample to test the pipeline.',
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: theme.textTheme.bodyMedium,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               TextField(
                 controller: _pathController,
-                style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
                   labelText: 'Audio file path',
                   hintText: '/path/to/sample.wav',
-                  labelStyle: TextStyle(color: Colors.white),
-                  hintStyle: TextStyle(color: Colors.white54),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white54),
-                  ),
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                'Tip: drop a short WAV/MP3 into the device storage or bundle test clips as assets, then enter the absolute path here.',
-                style: Theme.of(context).textTheme.bodySmall,
+                'Tip: drop a short WAV/MP3 into storage or bundle test clips as assets, then point to the absolute path here.',
+                style: theme.textTheme.bodySmall!
+                    .copyWith(
+                        color: theme.colorScheme.onSurface
+                            .withValues(alpha: 0.65)),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
               ElevatedButton.icon(
                 onPressed: _isProcessing ? null : _transcribeAudioFile,
                 icon: const Icon(Icons.audiotrack),
@@ -185,14 +184,15 @@ class _TranscriptionScreenState extends State<TranscriptionScreen> {
               ],
               if (_error != null) ...[
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.redAccent.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     _error!,
-                    style: const TextStyle(color: Colors.redAccent),
+                    style: theme.textTheme.bodyMedium!
+                        .copyWith(color: Colors.redAccent),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -200,19 +200,16 @@ class _TranscriptionScreenState extends State<TranscriptionScreen> {
               if (_transcript != null) ...[
                 Text(
                   'Transcript',
-                  style: Theme.of(context).textTheme.titleMedium,
+                  style: theme.textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white10,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    _transcript!,
-                    style: const TextStyle(fontSize: 16, color: Colors.white),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      _transcript!,
+                      style: theme.textTheme.bodyMedium,
+                    ),
                   ),
                 ),
               ],

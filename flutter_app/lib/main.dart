@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vioo_app/voteinorout/app/transcription_service.dart';
 import 'screens/config_screen.dart';
+import 'screens/home_screen.dart';
+import 'screens/script_screen.dart';
 import 'screens/transcription_screen.dart';
 
 Future<void> main() async {
@@ -14,29 +16,106 @@ Future<void> main() async {
 
 /// Main application widget
 class VoteInOrOutApp extends StatelessWidget {
-  const VoteInOrOutApp({Key? key}) : super(key: key);
+  const VoteInOrOutApp({super.key});
 
-  // Primary color hex: #1E2A44
-  static const int _primaryHex = 0xFF1E2A44;
+  static const Color _primaryNavy = Color(0xFF031750);
+  static const Color _accentBlue = Color(0xFF2B6FEE);
+  static const Color _background = Color(0xFFF4F6FB);
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme baseScheme = ColorScheme.fromSeed(
+      seedColor: _accentBlue,
+      brightness: Brightness.light,
+    );
+
+    final ColorScheme colorScheme = baseScheme.copyWith(
+      primary: _primaryNavy,
+      secondary: _accentBlue,
+      onPrimary: Colors.white,
+      onSecondary: Colors.white,
+      surface: Colors.white,
+      onSurface: const Color(0xFF1B1D28),
+    );
+
+    const OutlineInputBorder baseBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(12)),
+      borderSide: BorderSide(
+        color: Color.fromRGBO(3, 23, 80, 0.12),
+      ),
+    );
+
+    const OutlineInputBorder focusedBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.all(Radius.circular(12)),
+      borderSide: BorderSide(color: _accentBlue, width: 1.6),
+    );
+
     return MaterialApp(
       title: 'Vote In Or Out',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        brightness: Brightness.dark,
-        primarySwatch: createMaterialColor(const Color(_primaryHex)),
-        scaffoldBackgroundColor: const Color(_primaryHex),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(_primaryHex),
-          foregroundColor: Colors.white,
+        colorScheme: colorScheme,
+        scaffoldBackgroundColor: _background,
+        useMaterial3: true,
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: _primaryNavy,
+          centerTitle: true,
+          elevation: 0,
+          titleTextStyle: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: _primaryNavy,
+            letterSpacing: 0.4,
+          ),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: createMaterialColor(const Color(_primaryHex))[600],
+            backgroundColor: _accentBlue,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+            textStyle: const TextStyle(fontWeight: FontWeight.w600),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
           ),
         ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: _primaryNavy,
+            side: BorderSide(color: _primaryNavy.withValues(alpha: 0.3)),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+        ),
+        cardTheme: CardThemeData(
+          color: Colors.white,
+          elevation: 2,
+          shadowColor: _primaryNavy.withValues(alpha: 0.08),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          margin: const EdgeInsets.symmetric(vertical: 12),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          border: baseBorder,
+          enabledBorder: baseBorder,
+          focusedBorder: focusedBorder,
+          labelStyle: const TextStyle(color: _primaryNavy),
+          hintStyle: TextStyle(
+            color: const Color(0xFF1B1D28).withValues(alpha: 0.45),
+          ),
+        ),
+        textTheme: Typography.material2021().black.apply(
+              bodyColor: const Color(0xFF1B1D28),
+              displayColor: const Color(0xFF1B1D28),
+            ),
       ),
       initialRoute: '/splash',
       routes: {
@@ -52,7 +131,7 @@ class VoteInOrOutApp extends StatelessWidget {
 
 /// Splash screen that shows the app title for 2 seconds then navigates to Home
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -72,180 +151,15 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        color: const Color(0xFF1E2A44),
-        child: const Center(
-          child: Text(
-            'VOTE IN OR OUT',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 28,
-              letterSpacing: 1.2,
-            ),
+        color: VoteInOrOutApp._primaryNavy,
+        child: Center(
+          child: SvgPicture.asset(
+            'assets/logo-vioo-white.svg',
+            semanticsLabel: 'Vote In Or Out logo',
+            width: 220,
           ),
         ),
       ),
     );
   }
-}
-
-/// Simple Home screen with navigation to Config and Script screens
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Vote In Or Out')),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pushNamed('/config'),
-              child: const Text('Configuration'),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pushNamed('/script'),
-              child: const Text('Script Builder'),
-            ),
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pushNamed('/transcription'),
-              child: const Text('Transcription (beta)'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// `ConfigScreen` is implemented in `lib/config_screen.dart`.
-
-/// Script screen that consumes arguments from `/config` and displays a preview
-class ScriptScreen extends StatelessWidget {
-  const ScriptScreen({Key? key}) : super(key: key);
-
-  String _buildScript(Map<String, dynamic> args) {
-    final topic = args['topic'] as String? ?? 'your topic';
-    final style = args['style'] as String? ?? 'Educational';
-    final length = args['length'] as int? ?? 30;
-    final cta = args['cta'] as String?;
-
-    final buffer = StringBuffer();
-    buffer.writeln('$style short video about $topic');
-    buffer.writeln();
-    buffer.writeln(
-        'Open: Hook the viewer in the first 3 seconds with a strong claim or surprising fact about $topic.');
-    buffer.writeln();
-    buffer.writeln(
-        'Body: Deliver the main payoff clearly. Keep it concise — aim for ${length}s total.');
-    buffer.writeln();
-    if (cta != null && cta.isNotEmpty) {
-      buffer.writeln('Close: $cta');
-    } else {
-      buffer
-          .writeln('Close: Encourage the viewer to learn more or take action.');
-    }
-
-    return buffer.toString();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final args =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    final script = _buildScript(args ?? {});
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Script Builder')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Generated script preview',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white10,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    script,
-                    style: const TextStyle(fontSize: 16, color: Colors.white),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // Copy to clipboard
-                      Clipboard.setData(ClipboardData(text: script));
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Script copied to clipboard')),
-                      );
-                    },
-                    child: const Text('Copy script'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      // Placeholder action: go back to home
-                      Navigator.of(context).popUntil((route) => route.isFirst);
-                    },
-                    child: const Text('Done'),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Utility: create a MaterialColor from a single Color
-MaterialColor createMaterialColor(Color color) {
-  // Create a swatch by shifting the lightness in HSL color space.
-  final hsl = HSLColor.fromColor(color);
-  final strengths = <double>[.05];
-  for (int i = 1; i < 10; i++) {
-    strengths.add(0.1 * i);
-  }
-
-  final swatch = <int, Color>{};
-  for (var strength in strengths) {
-    // Map strength [0.0 .. 1.0] to a lightness adjustment around current value.
-    final double ds = (strength - 0.5) * 1.0; // range roughly -0.45 .. 0.4
-    double newLightness = (hsl.lightness + ds).clamp(0.0, 1.0);
-    swatch[(strength * 1000).round()] =
-        hsl.withLightness(newLightness).toColor();
-  }
-
-  // Normalize keys to 50..900 as required by MaterialColor
-  final normalized = <int, Color>{};
-  int i = 0;
-  for (var key in [50, 100, 200, 300, 400, 500, 600, 700, 800, 900]) {
-    normalized[key] = swatch.values.elementAt(i);
-    i++;
-  }
-  return MaterialColor(color.toARGB32(), normalized);
 }

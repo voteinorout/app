@@ -86,14 +86,18 @@ class TranscriptionService {
     final String? localeId =
         await _speechToText.systemLocale().then((value) => value?.localeId);
 
-    final bool started = await _speechToText.listen(
-      onResult: onResult,
+    final SpeechListenOptions listenOptions = SpeechListenOptions(
       listenMode: ListenMode.dictation,
       partialResults: true,
+      onDevice: true,
+    );
+
+    final bool started = await _speechToText.listen(
+      onResult: onResult,
+      listenOptions: listenOptions,
       pauseFor: const Duration(seconds: 3),
       listenFor: const Duration(seconds: 30),
       localeId: localeId,
-      onDevice: true, // Favors offline, on-device recognition when available.
     );
 
     if (!started) {
@@ -151,14 +155,18 @@ class TranscriptionService {
 
     final String? localeId = await _speechToText.systemLocale().then((value) => value?.localeId);
 
-    final bool started = await _speechToText.listen(
-      onResult: onResult,
+    final SpeechListenOptions listenOptions = SpeechListenOptions(
       listenMode: ListenMode.dictation,
       partialResults: true,
+      onDevice: true,
+    );
+
+    final bool started = await _speechToText.listen(
+      onResult: onResult,
+      listenOptions: listenOptions,
       pauseFor: const Duration(seconds: 2),
       listenFor: listenFor,
       localeId: localeId,
-      onDevice: true,
     );
 
     if (!started) {

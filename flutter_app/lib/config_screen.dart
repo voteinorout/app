@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:vioo_app/voteinorout/app/transcription_service.dart';
 
 class ConfigScreen extends StatefulWidget {
-  const ConfigScreen({Key? key}) : super(key: key);
+  const ConfigScreen({super.key});
 
   @override
   State<ConfigScreen> createState() => _ConfigScreenState();
@@ -66,50 +66,54 @@ class _ConfigScreenState extends State<ConfigScreen> {
       }
     }
 
+    if (!mounted) {
+      return;
+    }
+
     setState(() => _isSubmitting = false);
+    if (!mounted) {
+      return;
+    }
     Navigator.of(context).pushNamed('/script', arguments: args);
   }
 
   @override
   Widget build(BuildContext context) {
-    const Color bgColor = Color(0xFF1E2A44);
+    final ThemeData theme = Theme.of(context);
+    final TextStyle helperStyle = theme.textTheme.bodySmall!
+        .copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.65));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Configuration')),
-      backgroundColor: bgColor,
+      appBar: AppBar(
+        title: const Text('3-Second Hooks'),
+      ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Text(
+                  "Describe your message and we'll generate tight 3-second beats ready for video.",
+                  style: theme.textTheme.bodyMedium!
+                      .copyWith(color: theme.colorScheme.onSurface),
+                ),
+                const SizedBox(height: 24),
                 TextFormField(
                   controller: _ctaController,
-                  style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(
                     labelText: 'Video call-to-action',
                     hintText: 'e.g. Sign up at example.com',
-                    hintStyle: TextStyle(color: Colors.white70),
-                    labelStyle: TextStyle(color: Colors.white),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white54),
-                    ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
                 TextFormField(
                   controller: _topicController,
-                  style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(
                     labelText: 'Describe the payoff or main topic',
-                    hintText: 'What is the main takeaway?',
-                    hintStyle: TextStyle(color: Colors.white70),
-                    labelStyle: TextStyle(color: Colors.white),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white54),
-                    ),
+                    hintText: 'What should the viewer take away?',
                   ),
                   validator: (String? value) {
                     if (value == null || value.trim().isEmpty) {
@@ -118,19 +122,13 @@ class _ConfigScreenState extends State<ConfigScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
                 TextFormField(
                   controller: _lengthController,
                   keyboardType: TextInputType.number,
-                  style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(
                     labelText: 'Length (seconds)',
                     hintText: '30',
-                    hintStyle: TextStyle(color: Colors.white70),
-                    labelStyle: TextStyle(color: Colors.white),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white54),
-                    ),
                   ),
                   validator: (String? value) {
                     if (value == null || value.trim().isEmpty) {
@@ -143,57 +141,44 @@ class _ConfigScreenState extends State<ConfigScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
                 TextFormField(
                   controller: _audioPathController,
-                  style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(
                     labelText: 'Audio file path (optional)',
                     hintText: 'e.g., /path/to/audio.mp3',
-                    hintStyle: TextStyle(color: Colors.white70),
-                    labelStyle: TextStyle(color: Colors.white),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white54),
-                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Optional: point to a local clip (e.g., a sample WAV/MP3 or mic capture) to auto-transcribe the topic using on-device speech.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white70),
+                  'Point to a local clip to auto-transcribe the topic with on-device speech.',
+                  style: helperStyle,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 18),
                 DropdownButtonFormField<String>(
-                  value: _style,
-                  dropdownColor: bgColor,
-                  decoration: const InputDecoration(
-                    labelText: 'Style',
-                    labelStyle: TextStyle(color: Colors.white),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: Colors.white54),
-                    ),
-                  ),
-                  style: const TextStyle(color: Colors.white),
+                  initialValue: _style,
                   items: const [
                     DropdownMenuItem(value: 'Educational', child: Text('Educational')),
                     DropdownMenuItem(value: 'Entertaining', child: Text('Entertaining')),
                     DropdownMenuItem(value: 'Missy Elliott', child: Text('Missy Elliott')),
                   ],
-                  onChanged: (String? value) => setState(() => _style = value ?? 'Educational'),
+                  decoration: const InputDecoration(
+                    labelText: 'Style (optional)',
+                  ),
+                  dropdownColor: Colors.white,
+                  onChanged: (String? value) =>
+                      setState(() => _style = value ?? 'Educational'),
                 ),
-                const Spacer(),
+                const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: _isSubmitting ? null : _generateScript,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 14.0),
-                    child: _isSubmitting
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Generate script'),
-                  ),
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Generate script'),
                 ),
               ],
             ),
