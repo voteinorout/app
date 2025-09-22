@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:vioo_app/models/script_segment.dart';
 import 'package:vioo_app/voteinorout/app/script_generator.dart';
 
 class ConfigScreen extends StatefulWidget {
@@ -63,33 +62,19 @@ class _ConfigScreenState extends State<ConfigScreen> {
     });
 
     try {
-      final List<ScriptSegment> segments =
-          await ScriptGenerator.generateScript(topic, length, selectedStyle);
+      final String script = await ScriptGenerator.generateScript(
+        topic,
+        length,
+        selectedStyle,
+        cta: cta.isEmpty ? null : cta,
+      );
 
       if (!mounted) {
         return;
       }
 
-      final StringBuffer buffer = StringBuffer();
-      for (final ScriptSegment segment in segments) {
-        final int end = segment.startTime + 3;
-        buffer.writeln('${segment.startTime}-$end s');
-        buffer.writeln('Voiceover: ${segment.voiceover}');
-        if (segment.onScreenText.isNotEmpty) {
-          buffer.writeln('On-screen: ${segment.onScreenText}');
-        }
-        if (segment.visualsActions.isNotEmpty) {
-          buffer.writeln('Visuals: ${segment.visualsActions}');
-        }
-        buffer.writeln();
-      }
-
-      if (cta.isNotEmpty) {
-        buffer.writeln('CTA: $cta');
-      }
-
       setState(() {
-        _generatedScript = buffer.toString().trim();
+        _generatedScript = script.trim();
       });
 
       DefaultTabController.of(context).animateTo(1);
