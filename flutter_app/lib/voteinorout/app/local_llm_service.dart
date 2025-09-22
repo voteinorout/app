@@ -52,13 +52,19 @@ class LocalLlmService {
     required String topic,
     required int length,
     required String style,
+    List<String>? searchFacts,
   }) async {
     final Interpreter? interpreter = await _loadInterpreter();
     if (interpreter == null) {
       return null;
     }
 
-    final String prompt = _buildPrompt(topic: topic, length: length, style: style);
+    final String prompt = _buildPrompt(
+    topic: topic,
+    length: length,
+    style: style,
+    searchFacts: searchFacts ?? <String>[],  // Default empty
+  );
 
     try {
       // The current version of `tflite_flutter` bundled with the app does not
@@ -78,19 +84,17 @@ class LocalLlmService {
   /// Exposes the last interpreter error for logging/debug UIs.
   static String? get lastError => _lastError;
 
-  static String _buildPrompt({
-    required String topic,
-    required int length,
-    required String style,
-  }) {
-    final StringBuffer buffer = StringBuffer()
-      ..writeln('You are a local creative director LLM for voter engagement.')
-      ..writeln('Create a $style short-form script about "$topic".')
-      ..writeln('The video should run for roughly $length seconds and contain hooks every 3 seconds.')
-      ..writeln('Respond with JSON using the schema { "segments": [ { "startTime": number, "voiceover": string, "onScreenText": string, "visualsActions": string } ] }.');
-
-    return buffer.toString();
-  }
+  static Future<List<String>> _fetchSearchFacts(String topic) async {
+  // Comment out or return empty to disable (Streamlit basic mode doesn't use search)
+  return <String>[];
+  // If you want optional facts like Streamlit's enrichment, update queries to be neutral:
+  // final List<String> queries = <String>{
+  //   'Fun facts about $topic',
+  //   'Recent news about $topic',
+  //   'Statistics about $topic',
+  // }.toList();
+  // ... (rest of function)
+}
 
   /// Releases interpreter resources. Useful for hot reload or when the app no
   /// longer needs the local model.
@@ -100,4 +104,30 @@ class LocalLlmService {
       _interpreter = null;
     }
   }
+}
+
+static String _buildPrompt({
+  required String topic,
+  required int length,
+  required String style,
+  required List<String> searchFacts,
+}) {
+  final String styleFragment = (style.isEmpty || style == 'Other') ? 'any' : style.trim().toLowerCase();
+  final StringBuffer buffer = StringBuffer()
+    ..writeln('Generate a viral video script for "$topic" in $styleFragment style, ')
+    ..writeln('length about $length seconds, using the Missy Elliott method to ensure hooks every 3 seconds.')
+    ..writeln('Structure as timed beats: 0-3s: [hook], etc.')
+    ..writeln('For each: voiceover, on-screen text (if any), visuals/actions.')
+    ..writeln('End with a crisp CTA. Keep politically impactful and educational if relevant.');
+
+  if (searchFacts.isNotEmpty) {
+    buffer.writeln('\nOptionally paraphrase these facts:');
+    for (final String fact in searchFacts) {
+      buffer.writeln('- $fact');
+    }
+  }
+
+  buffer.writeln('Respond with plain text (no JSON).');
+
+  return buffer.toString();
 }

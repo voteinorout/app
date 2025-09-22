@@ -10,23 +10,18 @@ class ScriptGenerator {
   static const String _openAiEndpoint =
       'https://api.openai.com/v1/chat/completions';
   static const Map<String, String> _tones = <String, String>{
-    'Witty':
-        'Clever, sharp, and playful. Uses humor to land the point without diluting the seriousness.',
-    'Sarcastic':
-        'Dry and cutting. Highlights the absurdity of the opponent’s statement with pointed irony.',
-    'Empowered':
-        'Confident, inspiring, and forward-looking. Centers community power and determination.',
-    'Logical':
-        'Calm, fact-forward, and methodical. Walks through the evidence and dismantles the claim with receipts.',
-    'Fallacy':
-        'Instructional tone that calls out the exact logical fallacy or misinformation tactic at play and redirects viewers to the truth.',
-  };
+  'Witty': 'Clever, sharp, and playful. Uses humor to land the point without diluting the seriousness.',
+  'Sarcastic': 'Dry and cutting. Highlights the absurdity of the opponent’s statement with pointed irony.',
+  'Empowered': 'Confident, inspiring, and forward-looking. Centers community power and determination.',
+  'Logical': 'Calm, fact-forward, and methodical. Walks through the evidence and dismantles the claim with receipts.',
+  'Fallacy': 'Instructional tone that calls out the exact logical fallacy or misinformation tactic at play and redirects viewers to the truth.',
+};
 
   static const String _systemPrompt =
-      'Use the Missy Elliott method: design the video in reverse. Start from the payoff, '
-      'but write the script by validating the opening three seconds first—then the next three, then the next. '
-      'At every 3-second beat ask: Would I keep watching? Why should anyone care? Keep hooks tight and specific, '
-      'mimicking the viewer’s experience so you consistently maintain attention across each beat until the end.';
+    'Use the Missy Elliott method: design the video in reverse. Start from the payoff, '
+    'but write the script by validating the opening three seconds first—then the next three, then the next. '
+    'At every 3-second beat ask: Would I keep watching? Why should anyone care? Keep hooks tight and specific, '
+    'mimicking the viewer’s experience so you consistently maintain attention across each beat until the end.';
 
   static Future<String> generateScript(
     String topic,
@@ -117,133 +112,106 @@ class ScriptGenerator {
   }
 
   static String _buildUserPrompt(
-    String topic,
-    int length,
-    String style, {
-    required List<String> searchFacts,
-    String? cta,
-  }) {
-    final String styleFragment =
-        (style.isEmpty || style == 'Other') ? 'any' : style.trim();
-    final String? tone = _tones[style];
-    final int segmentCount = max(1, (length / 5).ceil());
+  String topic,
+  int length,
+  String style, {
+  required List<String> searchFacts,
+  String? cta,
+}) {
+  final String styleFragment = (style.isEmpty || style == 'Other') ? 'any' : style.trim().toLowerCase();
+  final StringBuffer buffer = StringBuffer()
+    ..writeln('Generate a viral video script for "$topic" in $styleFragment style, ')
+    ..writeln('length about $length seconds, using the Missy Elliott method to ensure hooks every 3 seconds.')
+    ..writeln('Structure the script as a timed breakdown with clear 3-second beats like: ')
+    ..writeln('0-3s: [hook]')
+    ..writeln('3-6s: [next beat]')
+    ..writeln('6-9s: [next beat]')
+    ..writeln('... and so on until the target length.')
+    ..writeln('For each beat, include:')
+    ..writeln('- What is said (voiceover or dialogue)')
+    ..writeln('- On-screen text (if any)')
+    ..writeln('- Suggested visuals or actions (short)')
+    ..writeln('Keep beats punchy, specific, and audience-focused. End with a crisp CTA.')
+    ..writeln('Tone and style requirements:')
+    ..writeln('- Politically impactful and educational.')  // Keep per Streamlit if desired; remove for full neutrality
+    ..writeln('- Click-baity hooks that create curiosity gaps without misleading.')
+    ..writeln('- Surprise and delight with credible facts, stats, or discoveries.')
+    ..writeln('- Keep claims accurate and responsibly framed; avoid personal attacks or demeaning language.')
+    ..writeln('- Where relevant, mention reputable sources or how to verify claims.')
+    ..writeln('- Close with a constructive, non-harassing civic action (learn more, verify, vote, contact reps).');
 
-    final List<String> requiredFacts = <String>[
-      'The U.S. Pentagon just issued a new memo requiring journalists to pledge not to report any unapproved information—even if it’s unclassified—and risk losing credentials.',
-      'ABC pulled Jimmy Kimmel Live! off the air indefinitely after his monologue about Charlie Kirk’s death, sparking public debate over whether it was corporate pressure or outright censorship.',
-      'In 2025, twelve children from U.S. Department of Defense schools filed a lawsuit after books were removed and curricula changed around race, gender, and LGBTQ topics following new federal rules around “divisive concepts.”',
-      'A recent Pew Research survey shows that 73% of U.S. adults believe that a free press is “extremely” or “very” important to the well-being of society.',
-      'Experts report that over 78% of “speech restriction developments” globally have increased in the last year, including via laws, court decisions, or government enforcement—even in countries that say they support free speech.',
-    ];
-
-    final StringBuffer buffer = StringBuffer()
-      ..writeln(
-          "Generate a viral video script for '$topic' in $styleFragment style, length about $length seconds, using the Missy Elliott method to ensure hooks every 5 seconds.")
-      ..writeln('Structure the script as a timed breakdown with clear 5-second beats like:')
-      ..writeln('0-5s: [hook]')
-      ..writeln('5-10s: [next beat]')
-      ..writeln('10-15s: [next beat]')
-      ..writeln('... and so on until the target length.')
-      ..writeln('For each beat, include:')
-      ..writeln('- What is said (voiceover or dialogue)')
-      ..writeln('- Suggested visuals or actions (short)')
-      ..writeln('- A Search line recommending a specific source/tool/keyword to explore further')
-      ..writeln(
-          'Keep beats punchy, specific, and audience-focused. Use curiosity gaps. End with a crisp CTA in the final beat.')
-      ..writeln('Aim for about $segmentCount beats total.');
-
-    buffer
-      ..writeln()
-      ..writeln('Tone and style requirements:')
-      ..writeln('- Politically impactful and educational.')
-      ..writeln('- Click-baity hooks that create curiosity gaps without misleading.')
-      ..writeln('- Surprise and delight with credible facts, stats, or discoveries.')
-      ..writeln('- Keep claims accurate and responsibly framed; avoid personal attacks or demeaning language.')
-      ..writeln('- Where relevant, mention reputable sources or how to verify claims.')
-      ..writeln('- Close with a constructive, non-harassing civic action (learn more, verify, vote, contact reps).');
-
-    if (tone != null) {
-      buffer.writeln('\nApply this tone: $tone');
-    }
-
-    if (searchFacts.isNotEmpty) {
-      buffer.writeln('\nReference these real-world insights inside the beats (paraphrase as needed):');
-      for (final String fact in searchFacts) {
-        buffer.writeln('- $fact');
-      }
-    }
-
-    buffer.writeln('\nYou must weave in all of the following facts across the script:');
-    for (final String fact in requiredFacts) {
+  if (searchFacts.isNotEmpty) {
+    buffer.writeln('\nOptionally reference or paraphrase these relevant insights to add credibility and surprise (cite sources briefly if used):');
+    for (final String fact in searchFacts) {
       buffer.writeln('- $fact');
     }
-
-    if (cta != null && cta.trim().isNotEmpty) {
-      buffer.writeln(
-          '\nUse this call-to-action wording in the final beat: "${cta.trim()}"');
-    }
-
-    buffer.writeln(
-        '\nOutput only the finished script in plain text using headings like “0-5s:” etc., and label the final beat “Call to Action (XX-YYs):”.');
-
-    return buffer.toString();
   }
+
+  if (cta != null && cta.trim().isNotEmpty) {
+    buffer.writeln('\nOverride the default CTA with this exact wording in the final beat: "${cta.trim()}"');
+  }
+
+  buffer.writeln('\nOutput only the finished script in plain text (no JSON, no extra notes).');
+
+  return buffer.toString();
+}
 
   static Future<List<String>> _fetchSearchFacts(String topic) async {
-    final String serperKey =
-        (dotenv.env['SERPER_API_KEY'] ?? const String.fromEnvironment('SERPER_API_KEY')).trim();
-    if (serperKey.isEmpty) {
-      return <String>[];
-    }
+  final String serperKey =
+      (dotenv.env['SERPER_API_KEY'] ?? const String.fromEnvironment('SERPER_API_KEY')).trim();
+  if (serperKey.isEmpty) {
+    return <String>[];  // Graceful fallback if no key
+  }
 
-    final List<String> queries = <String>{
-      'Did you know facts about $topic',
-      'Recent free speech news about $topic',
-      'Statistics about $topic civic engagement',
-    }.toList();
+  final List<String> queries = <String>{
+    'Fun facts about $topic',
+    'Recent news about $topic',
+    'Statistics about $topic',
+  }.toList();
 
-    final List<String> facts = <String>[];
+  final List<String> facts = <String>[];
 
-    for (final String query in queries) {
-      try {
-        final http.Response response = await http.post(
-          Uri.parse('https://google.serper.dev/search'),
-          headers: <String, String>{
-            'Content-Type': 'application/json',
-            'X-API-KEY': serperKey,
-          },
-          body: jsonEncode(<String, String>{'q': query, 'gl': 'us', 'hl': 'en'}),
-        );
+  for (final String query in queries) {
+    try {
+      final http.Response response = await http.post(
+        Uri.parse('https://google.serper.dev/search'),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'X-API-KEY': serperKey,
+        },
+        body: jsonEncode(<String, String>{'q': query, 'gl': 'us', 'hl': 'en'}),
+      );
 
-        if (response.statusCode != 200) {
-          continue;
-        }
+      if (response.statusCode != 200) {
+        continue;
+      }
 
-        final Map<String, dynamic> data =
-            jsonDecode(response.body) as Map<String, dynamic>;
-        final List<dynamic>? organic = data['organic'] as List<dynamic>?;
+      final Map<String, dynamic> data =
+          jsonDecode(response.body) as Map<String, dynamic>;
+      final List<dynamic>? organic = data['organic'] as List<dynamic>?;
 
-        if (organic == null || organic.isEmpty) {
-          continue;
-        }
+      if (organic == null || organic.isEmpty) {
+        continue;
+      }
 
-        for (final dynamic entry in organic.take(3)) {
-          if (entry is Map<String, dynamic>) {
-            final String title = entry['title'] as String? ?? '';
-            final String snippet = entry['snippet'] as String? ?? '';
-            final String fact = '$title — $snippet'.trim();
-            if (fact.isNotEmpty) {
-              facts.add(fact);
-            }
+      for (final dynamic entry in organic.take(2)) {  // Limit to 2 per query for brevity
+        if (entry is Map<String, dynamic>) {
+          final String title = entry['title'] as String? ?? '';
+          final String snippet = entry['snippet'] as String? ?? '';
+          final String fact = '$title — $snippet'.trim();
+          if (fact.isNotEmpty && fact.length < 200) {  // Keep facts concise
+            facts.add(fact);
           }
         }
-      } catch (_) {
-        // Ignore individual query failures.
       }
+    } catch (_) {
+      // Ignore individual query failures.
     }
-
-    return facts.take(6).toList();
+    if (facts.length >= 6) break;  // Cap at 6 total
   }
+
+  return facts.take(6).toList();
+}
 
   static List<ScriptSegment> _parseSegments(String rawContent, int length) {
     final String cleaned = rawContent
