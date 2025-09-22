@@ -6,15 +6,22 @@
 // tree, read text, and verify that the values of widget properties are correct.
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:vioo_app/main.dart';
 
 void main() {
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
     await tester.pumpWidget(const VoteInOrOutApp());
 
-    // The splash screen should show the app title initially.
-    expect(find.text('VOTE IN OR OUT'), findsOneWidget);
+    // Splash screen renders the brand SVG immediately.
+    expect(find.byType(SvgPicture), findsOneWidget);
+
+    // After the splash delay the app navigates to the home screen.
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+
+    expect(find.text('3-Second Hooks'), findsWidgets);
+    expect(find.text('Create a script'), findsWidgets);
   });
 }

@@ -11,18 +11,20 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.2
   http: ^1.2.0  # For OpenAI API calls
-  speech_to_text: ^6.6.0  # For local transcription
-  just_audio: ^0.9.36  # Playback for feeding audio into speech recognizer
-  tflite_flutter: ^0.10.3  # Local LLM fallback inference
-  flutter_dotenv: ^5.1.0  # Environment-based configuration
+  speech_to_text: ^7.3.0  # For local transcription
+  just_audio: ^0.10.5  # Playback for feeding audio into speech recognizer
+  tflite_flutter: ^0.11.0  # Local LLM fallback inference
+  flutter_dotenv: ^6.0.0  # Environment-based configuration
+  flutter_svg: ^2.2.1  # Render SVG assets such as the splash logo
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
+  flutter_lints: ^6.0.0
 
 flutter:
   uses-material-design: true
   assets:
     - assets/models/local_llm.tflite
-    - .env
+    - assets/logo-vioo-white.svg
+    - assets/logo-vioo-navy.svg

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:tflite_flutter/tflite_flutter.dart';
 
@@ -62,34 +61,15 @@ class LocalLlmService {
     final String prompt = _buildPrompt(topic: topic, length: length, style: style);
 
     try {
-      final SignatureRunner? runner = interpreter.getSignatureRunner('generate');
-      if (runner == null) {
-        return null;
-      }
-
-      final Map<String, Object?> outputs = runner.run(<String, Object?>{
-        'prompt': prompt,
-        'max_tokens': 256,
-      });
-
-      final Object? rawText = outputs['text'] ?? outputs.values.firstOrNull;
-      if (rawText is String && rawText.trim().isNotEmpty) {
-        return rawText;
-      }
-
-      if (rawText is List && rawText.isNotEmpty) {
-        // Some models return UTF-8 bytes. Attempt to decode a single buffer.
-        final Object? first = rawText.first;
-        if (first is List<int>) {
-          return utf8.decode(first, allowMalformed: true);
-        }
-        if (first is int) {
-          return utf8.decode(rawText.cast<int>(), allowMalformed: true);
-        }
-      }
+      // The current version of `tflite_flutter` bundled with the app does not
+      // expose the SignatureRunner helpers that make it easy to call into
+      // generated model signatures. Until that support is wired up, we surface
+      // a friendly message so callers can fall back to the remote or template
+      // based generators without crashing the app.
+      _lastError =
+          'Local LLM generation is unavailable: signature runner support is missing in this build (prompt length ${prompt.length}).';
     } catch (e) {
       _lastError = e.toString();
-      return null;
     }
 
     return null;
@@ -116,12 +96,8 @@ class LocalLlmService {
   /// longer needs the local model.
   static Future<void> dispose() async {
     if (_interpreter != null) {
-      await _interpreter?.close();
+      _interpreter!.close();
       _interpreter = null;
     }
   }
-}
-
-extension<T> on Iterable<T> {
-  T? get firstOrNull => isEmpty ? null : first;
 }

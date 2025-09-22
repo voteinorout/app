@@ -1,50 +1,63 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
-/// HomeScreen for Vote In Or Out
-///
-/// Displays three feature cards and an AppBar with a centered title.
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
-  static const Color _darkBlue = Color(0xFF1E2A44);
-
-  Widget _featureCard({
+  Widget _featureCard(
+    BuildContext context, {
     required IconData icon,
     required String title,
     required String description,
-    required VoidCallback onPressed,
+    required String cta,
+    VoidCallback? onPressed,
   }) {
+    final ThemeData theme = Theme.of(context);
+    final Color iconColor = theme.colorScheme.primary;
+
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CircleAvatar(
-              backgroundColor: _darkBlue,
-              child: Icon(icon, color: Colors.white),
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: iconColor.withValues(alpha: 0.12),
+                  radius: 26,
+                  child: Icon(icon, color: iconColor, size: 28),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.titleMedium!
+                            .copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        description,
+                        style: theme.textTheme.bodyMedium!
+                            .copyWith(
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.7)),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 6),
-                  Text(description,
-                      style:
-                          const TextStyle(fontSize: 13, color: Colors.black87)),
-                ],
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: onPressed,
+                child: Text(cta),
               ),
-            ),
-            const SizedBox(width: 12),
-            ElevatedButton(
-              onPressed: onPressed,
-              child: const Text('Create a script'),
             ),
           ],
         ),
@@ -54,51 +67,74 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: _darkBlue,
       appBar: AppBar(
-        backgroundColor: _darkBlue,
-        centerTitle: true,
-        title: const Text(
-          'VOTE IN OR OUT',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: SvgPicture.asset(
+          'assets/logo-vioo-navy.svg',
+          height: 28,
+          semanticsLabel: 'Vote In Or Out',
         ),
-        elevation: 0,
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 16),
-            _featureCard(
-              icon: Icons.anchor,
-              title: '3-Second Hooks',
-              description:
-                  "Generate scripts with hooks every 3 seconds to keep 'em engaged",
-              onPressed: () => Navigator.pushNamed(context, '/config'),
-            ),
-            _featureCard(
-              icon: Icons.sentiment_satisfied,
-              title: 'Fallacy Fighter',
-              description:
-                  'Identify and respond to common fallacies gracefully',
-              onPressed: () {},
-            ),
-            _featureCard(
-              icon: Icons.handshake,
-              title: 'Rebuttal + Action',
-              description: 'Quick rebuttals with a suggested next action',
-              onPressed: () {},
-            ),
-            _featureCard(
-              icon: Icons.mic,
-              title: 'Transcription (Beta)',
-              description: 'Test local speech-to-text from mic or audio clips',
-              onPressed: () => Navigator.pushNamed(context, '/transcription'),
-            ),
-            const SizedBox(height: 12),
-            // Expand to push content to top if needed
-            const Expanded(child: SizedBox()),
-          ],
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '3-Second Hooks',
+                style: theme.textTheme.headlineSmall!
+                    .copyWith(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Campaign-ready scripts that keep viewers watching and taking action.',
+                style: theme.textTheme.bodyMedium!
+                    .copyWith(
+                        color: theme.colorScheme.onSurface
+                            .withValues(alpha: 0.7)),
+              ),
+              const SizedBox(height: 28),
+              _featureCard(
+                context,
+                icon: Icons.bolt,
+                title: '3-Second Hooks',
+                description:
+                    'Generate scroll-stopping hooks with clear on-screen cues every three seconds.',
+                cta: 'Create a script',
+                onPressed: () => Navigator.pushNamed(context, '/config'),
+              ),
+              _featureCard(
+                context,
+                icon: Icons.shield_outlined,
+                title: 'Fallacy Fighter',
+                description:
+                    'Upload a clip to flag fallacies and draft instant responses.',
+                cta: 'Coming soon',
+                onPressed: null,
+              ),
+              _featureCard(
+                context,
+                icon: Icons.group_work_outlined,
+                title: 'Rebuttal + Action',
+                description:
+                    'Turn arguments into shareable responses with a clear action step.',
+                cta: 'Coming soon',
+                onPressed: null,
+              ),
+              _featureCard(
+                context,
+                icon: Icons.mic_outlined,
+                title: 'Transcription (Beta)',
+                description:
+                    'Test on-device speech-to-text using the microphone or local clips.',
+                cta: 'Try transcription',
+                onPressed: () => Navigator.pushNamed(context, '/transcription'),
+              ),
+            ],
+          ),
         ),
       ),
     );
