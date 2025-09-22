@@ -1,166 +1,68 @@
 import 'package:flutter/material.dart';
-import 'package:vioo_app/models/script_segment.dart';
-import 'package:vioo_app/voteinorout/app/script_generator.dart';
+import 'package:flutter/services.dart';
 
-class ScriptScreen extends StatefulWidget {
+class ScriptScreen extends StatelessWidget {
   const ScriptScreen({super.key});
-
-  @override
-  State<ScriptScreen> createState() => _ScriptScreenState();
-}
-
-class _ScriptScreenState extends State<ScriptScreen> {
-  late Future<List<ScriptSegment>> _scriptFuture;
-  late String _topic;
-  late int _length;
-  late String _style;
-  bool _initialized = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_initialized) {
-      return;
-    }
-
-    final args =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    _topic = args?['topic'] as String? ?? 'Topic';
-    _length = args?['length'] as int? ?? 30;
-    _style = args?['style'] as String? ?? 'Educational';
-    _scriptFuture = ScriptGenerator.generateScript(_topic, _length, _style);
-    _initialized = true;
-  }
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final Map<String, dynamic> args =
+        (ModalRoute.of(context)?.settings.arguments ?? <String, dynamic>{})
+            as Map<String, dynamic>;
+
+    final String script = (args['script'] as String?)?.trim() ?? '';
+    final String topic = args['topic'] as String? ?? 'Topic';
+    final int length = args['length'] as int? ?? 30;
+    final String style = args['style'] as String? ?? 'Any';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Script Builder')),
+      appBar: AppBar(title: const Text('3-Second Hooks')),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+          children: <Widget>[
             Text(
-              'Preview for: $_topic',
+              topic,
               style: theme.textTheme.titleMedium!
                   .copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 8),
             Text(
-              'Style: $_style • Length: ${_length}s',
+              'Style: $style • Length: ${length}s',
               style: theme.textTheme.bodySmall!
-                  .copyWith(
-                      color:
-                          theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                  .copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
             ),
             const SizedBox(height: 20),
             Expanded(
-              child: FutureBuilder<List<ScriptSegment>>(
-                future: _scriptFuture,
-                builder: (BuildContext context,
-                    AsyncSnapshot<List<ScriptSegment>> snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting ||
-                      snapshot.connectionState == ConnectionState.active) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.error_outline,
-                                color: Colors.redAccent, size: 32),
-                            const SizedBox(height: 12),
-                            Text(
-                              'There was a problem generating your script. Please try again.',
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.bodyMedium,
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: () {
-                                setState(() {
-                                  _scriptFuture =
-                                      ScriptGenerator.generateScript(
-                                          _topic, _length, _style);
-                                });
-                              },
-                              child: const Text('Retry'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-
-                  final List<ScriptSegment> segments =
-                      snapshot.data ?? <ScriptSegment>[];
-                  if (segments.isEmpty) {
-                    return Center(
-                      child: Text(
-                        'No script generated yet. Try a different prompt.',
-                        style: theme.textTheme.bodyMedium,
-                        textAlign: TextAlign.center,
-                      ),
-                    );
-                  }
-
-                  return ListView.separated(
-                    itemCount: segments.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (BuildContext context, int index) {
-                      final ScriptSegment segment = segments[index];
-                      return Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(18.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${segment.startTime}-${segment.startTime + 3}s',
-                                style: theme.textTheme.labelLarge!
-                                    .copyWith(color: theme.colorScheme.primary),
-                              ),
-                              const SizedBox(height: 10),
-                              Text(
-                                segment.voiceover,
-                                style: theme.textTheme.bodyLarge!
-                                    .copyWith(fontWeight: FontWeight.w600),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'On-screen: ${segment.onScreenText}',
-                                style: theme.textTheme.bodyMedium!
-                                    .copyWith(
-                                        color: theme.colorScheme.onSurface
-                                            .withValues(alpha: 0.7)),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                'Visuals: ${segment.visualsActions}',
-                                style: theme.textTheme.bodyMedium!
-                                    .copyWith(
-                                        color: theme.colorScheme.onSurface
-                                            .withValues(alpha: 0.7)),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                child: SelectableText(
+                  script.isEmpty
+                      ? 'Generate a script from the CONFIGURE tab to preview it here.'
+                      : script,
+                  style: theme.textTheme.bodyMedium,
+                ),
               ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: script.isEmpty
+                  ? null
+                  : () => _copyToClipboard(context, script),
+              child: const Text('Copy script'),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  void _copyToClipboard(BuildContext context, String script) {
+    Clipboard.setData(ClipboardData(text: script));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Script copied to clipboard')),
     );
   }
 }

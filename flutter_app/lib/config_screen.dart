@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:vioo_app/voteinorout/app/transcription_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:vioo_app/models/script_segment.dart';
+import 'package:vioo_app/voteinorout/app/script_generator.dart';
 
 class ConfigScreen extends StatefulWidget {
   const ConfigScreen({super.key});
@@ -12,177 +14,222 @@ class _ConfigScreenState extends State<ConfigScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _ctaController = TextEditingController();
   final TextEditingController _topicController = TextEditingController();
-  final TextEditingController _lengthController = TextEditingController(text: '30');
-  final TextEditingController _audioPathController = TextEditingController();
+  final TextEditingController _lengthController =
+      TextEditingController(text: '30');
 
   String _style = 'Educational';
   bool _isSubmitting = false;
+  String? _generatedScript;
 
   @override
   void dispose() {
     _ctaController.dispose();
     _topicController.dispose();
     _lengthController.dispose();
-    _audioPathController.dispose();
     super.dispose();
   }
 
   Future<void> _generateScript() async {
-    if (_isSubmitting) {
-      return;
-    }
-    if (!_formKey.currentState!.validate()) {
+    if (_isSubmitting || !_formKey.currentState!.validate()) {
       return;
     }
 
-    setState(() => _isSubmitting = true);
-
-    final String audioPath = _audioPathController.text.trim();
-
-    if (!mounted) {
+    final String topic = _topicController.text.trim();
+    if (topic.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please describe the payoff or topic.')),
+      );
       return;
     }
 
-    final Map<String, dynamic> args = <String, dynamic>{
-      'cta': _ctaController.text.trim().isEmpty ? null : _ctaController.text.trim(),
-      'topic': _topicController.text.trim(),
-      'length': int.tryParse(_lengthController.text) ?? 30,
-      'style': _style,
-    };
+    final int length = int.tryParse(_lengthController.text) ?? 30;
+    final String selectedStyle =
+        _style == 'Other' ? 'Unspecified' : _style.trim();
+    final String cta = _ctaController.text.trim();
 
-    if (audioPath.isNotEmpty) {
-      try {
-        final String transcribedText =
-            await TranscriptionService.transcribeAudio(audioPath);
-        if (transcribedText.isNotEmpty) {
-          args['topic'] = transcribedText;
+    final String apiKey =
+        (dotenv.env['OPENAI_API_KEY'] ?? const String.fromEnvironment('OPENAI_API_KEY')).trim();
+
+    if (apiKey.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('OpenAI API key missing. Add it to .env.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+      _generatedScript = null;
+    });
+
+    try {
+      final List<ScriptSegment> segments =
+          await ScriptGenerator.generateScript(topic, length, selectedStyle);
+
+      if (!mounted) {
+        return;
+      }
+
+      final StringBuffer buffer = StringBuffer();
+      for (final ScriptSegment segment in segments) {
+        final int end = segment.startTime + 3;
+        buffer.writeln('${segment.startTime}-$end s');
+        buffer.writeln('Voiceover: ${segment.voiceover}');
+        if (segment.onScreenText.isNotEmpty) {
+          buffer.writeln('On-screen: ${segment.onScreenText}');
         }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Transcription failed: $e')),
-          );
+        if (segment.visualsActions.isNotEmpty) {
+          buffer.writeln('Visuals: ${segment.visualsActions}');
         }
+        buffer.writeln();
+      }
+
+      if (cta.isNotEmpty) {
+        buffer.writeln('CTA: $cta');
+      }
+
+      setState(() {
+        _generatedScript = buffer.toString().trim();
+      });
+
+      DefaultTabController.of(context).animateTo(1);
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Generation failed: $e. Check your API key or network.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
       }
     }
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() => _isSubmitting = false);
-    if (!mounted) {
-      return;
-    }
-    Navigator.of(context).pushNamed('/script', arguments: args);
   }
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final TextStyle helperStyle = theme.textTheme.bodySmall!
-        .copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.65));
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('3-Second Hooks'),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  "Describe your message and we'll generate tight 3-second beats ready for video.",
-                  style: theme.textTheme.bodyMedium!
-                      .copyWith(color: theme.colorScheme.onSurface),
-                ),
-                const SizedBox(height: 24),
-                TextFormField(
-                  controller: _ctaController,
-                  decoration: const InputDecoration(
-                    labelText: 'Video call-to-action',
-                    hintText: 'e.g. Sign up at example.com',
-                  ),
-                ),
-                const SizedBox(height: 18),
-                TextFormField(
-                  controller: _topicController,
-                  decoration: const InputDecoration(
-                    labelText: 'Describe the payoff or main topic',
-                    hintText: 'What should the viewer take away?',
-                  ),
-                  validator: (String? value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please describe the payoff or topic.';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 18),
-                TextFormField(
-                  controller: _lengthController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Length (seconds)',
-                    hintText: '30',
-                  ),
-                  validator: (String? value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return null;
-                    }
-                    final int? parsed = int.tryParse(value);
-                    if (parsed == null || parsed <= 0) {
-                      return 'Enter a positive number.';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 18),
-                TextFormField(
-                  controller: _audioPathController,
-                  decoration: const InputDecoration(
-                    labelText: 'Audio file path (optional)',
-                    hintText: 'e.g., /path/to/audio.mp3',
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Point to a local clip to auto-transcribe the topic with on-device speech.',
-                  style: helperStyle,
-                ),
-                const SizedBox(height: 18),
-                DropdownButtonFormField<String>(
-                  initialValue: _style,
-                  items: const [
-                    DropdownMenuItem(value: 'Educational', child: Text('Educational')),
-                    DropdownMenuItem(value: 'Entertaining', child: Text('Entertaining')),
-                    DropdownMenuItem(value: 'Missy Elliott', child: Text('Missy Elliott')),
-                  ],
-                  decoration: const InputDecoration(
-                    labelText: 'Style (optional)',
-                  ),
-                  dropdownColor: Colors.white,
-                  onChanged: (String? value) =>
-                      setState(() => _style = value ?? 'Educational'),
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: _isSubmitting ? null : _generateScript,
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Generate script'),
-                ),
-              ],
-            ),
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('3-Second Hooks'),
+          bottom: const TabBar(
+            tabs: <Widget>[
+              Tab(text: 'CONFIGURE'),
+              Tab(text: 'SCRIPT'),
+            ],
           ),
+        ),
+        body: TabBarView(
+          children: <Widget>[
+            SafeArea(
+              child: SingleChildScrollView(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      TextFormField(
+                        controller: _topicController,
+                        keyboardType: TextInputType.multiline,
+                        minLines: 3,
+                        maxLines: 6,
+                        decoration: const InputDecoration(
+                          labelText: 'What’s the big idea?',
+                          hintText:
+                              'Share the key issue driving this campaign—whether it’s something personal, policy-focused, or a response to recent events.',
+                        ),
+                        validator: (String? value) =>
+                            (value == null || value.trim().isEmpty)
+                                ? 'Please describe the payoff or topic.'
+                                : null,
+                      ),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        controller: _ctaController,
+                        decoration: const InputDecoration(
+                          labelText: 'Final call to action (optional)',
+                          hintText: 'Make a plan to vote at vote.org',
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        controller: _lengthController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Length (seconds)',
+                          hintText: '30',
+                        ),
+                        validator: (String? value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return null;
+                          }
+                          final int? parsed = int.tryParse(value);
+                          return (parsed == null || parsed <= 0)
+                              ? 'Enter a positive number.'
+                              : null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      DropdownButtonFormField<String>(
+                        initialValue: _style,
+                        items: const <DropdownMenuItem<String>>[
+                          DropdownMenuItem(
+                              value: 'Educational', child: Text('Educational')),
+                          DropdownMenuItem(value: 'Motivational', child: Text('Motivational')),
+                          DropdownMenuItem(value: 'Comedy', child: Text('Comedy')),
+                          DropdownMenuItem(value: 'Other', child: Text('Other')),
+                        ],
+                        decoration: const InputDecoration(
+                          labelText: 'Style (optional)',
+                        ),
+                        onChanged: (String? value) => setState(
+                          () => _style = value ?? 'Educational',
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      ElevatedButton(
+                        onPressed: _isSubmitting ? null : _generateScript,
+                        child: _isSubmitting
+                            ? const SizedBox(
+                                height: 22,
+                                width: 22,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text('Generate script'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            SafeArea(
+              child: _generatedScript == null
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Text(
+                          'Generate a script in the CONFIGURE tab to view it here.',
+                          style: theme.textTheme.bodyMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    )
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.all(16.0),
+                      child: SelectableText(
+                        _generatedScript!,
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ),
+            ),
+          ],
         ),
       ),
     );

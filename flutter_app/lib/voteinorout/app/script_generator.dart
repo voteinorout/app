@@ -9,30 +9,37 @@ import 'package:vioo_app/voteinorout/app/local_llm_service.dart';
 class ScriptGenerator {
   static const String _openAiEndpoint =
       'https://api.openai.com/v1/chat/completions';
-  static const String _defaultSystemPrompt =
-      'You are an award-winning political short-form video writer. '
-      'Every script you deliver is structured as 3-second beats with sharp hooks, '
-      'clear on-screen guidance, and visual directions that keep viewers engaged.';
-  static const String _missySystemPrompt =
-      'Channel Missy Elliott as a creative director for civic action videos. '
-      'Scripts must feel like a Missy track: playful swagger, rhythmic pacing, cultural nods, '
-      'and lines that punch in every 3 seconds. Always include on-screen text and matching visuals. '
-      'Output only the JSON specified by the user.';
+  static const Map<String, String> _tones = <String, String>{
+    'Witty':
+        'Clever, sharp, and playful. Uses humor to land the point without diluting the seriousness.',
+    'Sarcastic':
+        'Dry and cutting. Highlights the absurdity of the opponent’s statement with pointed irony.',
+    'Empowered':
+        'Confident, inspiring, and forward-looking. Centers community power and determination.',
+    'Logical':
+        'Calm, fact-forward, and methodical. Walks through the evidence and dismantles the claim with receipts.',
+    'Fallacy':
+        'Instructional tone that calls out the exact logical fallacy or misinformation tactic at play and redirects viewers to the truth.',
+  };
+
+  static const String _systemPrompt =
+      'Use the Missy Elliott method: design the video in reverse. Start from the payoff, '
+      'but write the script by validating the opening three seconds first—then the next three, then the next. '
+      'At every 3-second beat ask: Would I keep watching? Why should anyone care? Keep hooks tight and specific, '
+      'mimicking the viewer’s experience so you consistently maintain attention across each beat until the end.';
 
   static Future<List<ScriptSegment>> generateScript(
     String topic,
     int length,
     String style,
   ) async {
-    final bool missyMode = style.trim().toLowerCase() == 'missy elliott';
-    final String systemPrompt =
-        missyMode ? _missySystemPrompt : _defaultSystemPrompt;
-    final String userPrompt = _buildUserPrompt(topic, length, style, missyMode);
+    final String userPrompt = _buildUserPrompt(topic, length, style);
 
     List<ScriptSegment> remoteSegments = <ScriptSegment>[];
-    final String? apiKey = dotenv.env['OPENAI_API_KEY'];
+    final String apiKey =
+        (dotenv.env['OPENAI_API_KEY'] ?? const String.fromEnvironment('OPENAI_API_KEY')).trim();
 
-    if (apiKey != null && apiKey.isNotEmpty) {
+    if (apiKey.isNotEmpty) {
       try {
         final http.Response response = await http.post(
           Uri.parse(_openAiEndpoint),
@@ -46,7 +53,7 @@ class ScriptGenerator {
             'messages': <Map<String, String>>[
               <String, String>{
                 'role': 'system',
-                'content': systemPrompt,
+                'content': _systemPrompt,
               },
               <String, String>{
                 'role': 'user',
@@ -91,34 +98,42 @@ class ScriptGenerator {
     return _fallbackScript(topic, length);
   }
 
-  static String _buildUserPrompt(
-      String topic, int length, String style, bool missyMode) {
-    final int expectedSegments = max(1, (length / 3).ceil());
-    final StringBuffer buffer = StringBuffer()
-      ..writeln('Topic: $topic')
-      ..writeln('Total length (seconds): $length')
-      ..writeln('Target segments (3-second beats): $expectedSegments')
-      ..writeln('Requested style: ${style.isEmpty ? 'Unspecified' : style}');
+  static String _buildUserPrompt(String topic, int length, String style) {
+    final String styleFragment =
+        (style.isEmpty || style == 'Other') ? 'any' : style.trim();
+    final String? tone = _tones[style];
 
-    if (missyMode) {
-      buffer.writeln(
-          'Tone directives: Swaggering Missy Elliott energy, rhythmic punchlines, cultural callbacks.');
-    } else {
-      buffer.writeln(
-          'Tone directives: Energetic civic engagement, high retention hooks.');
+    final StringBuffer buffer = StringBuffer()
+      ..writeln(
+          "Generate a viral video script for '$topic' in $styleFragment style, length about $length seconds, using the Missy Elliott method to ensure hooks every 3 seconds.")
+      ..writeln('Structure the script as a timed breakdown with clear 3-second beats like:')
+      ..writeln('0-3s: [hook]')
+      ..writeln('3-6s: [next beat]')
+      ..writeln('6-9s: [next beat]')
+      ..writeln('... and so on until the target length.')
+      ..writeln('For each beat, include:')
+      ..writeln('- What is said (voiceover or dialogue)')
+      ..writeln('- Suggested visuals or actions (short)')
+      ..writeln(
+          'Keep beats punchy, specific, and audience-focused. End with a crisp CTA.')
+      ..writeln()
+      ..writeln('Tone and style requirements:')
+      ..writeln('- Politically impactful and educational.')
+      ..writeln('- Click-baity hooks that create curiosity gaps without misleading.')
+      ..writeln('- Surprise and delight with credible facts, stats, or discoveries.')
+      ..writeln('- Keep claims accurate and responsibly framed; avoid personal attacks or demeaning language.')
+      ..writeln('- Where relevant, mention reputable sources or how to verify claims.')
+      ..writeln('- Close with a constructive, non-harassing civic action (learn more, verify, vote, contact reps).');
+
+    if (tone != null) {
+      buffer.writeln('\nApply this tone: $tone');
     }
 
-    buffer
-      ..writeln(
-          'Output instructions: Return JSON with a "segments" array. Each segment must include')
-      ..writeln(
-          '"startTime" (seconds from 0, multiples of 3), "voiceover", "onScreenText", "visualsActions".')
-      ..writeln(
-          'Keep startTime strictly increasing by 3. Limit to $expectedSegments segments.')
-      ..writeln(
-          'Each segment should end on a cliffhanger hook to lead into the next beat.')
-      ..writeln(
-          'Do not include commentary or wrap the JSON in markdown fences.');
+    buffer.writeln(
+        '\nReturn JSON with a "segments" array. Each segment must include "startTime" (seconds from 0, multiples of 3), "voiceover", and "visualsActions".');
+    buffer.writeln(
+        'Keep startTime strictly increasing by 3 and limit to ${max(1, (length / 3).ceil())} segments.');
+    buffer.writeln('Do not include commentary or wrap the JSON in markdown fences.');
 
     return buffer.toString();
   }
