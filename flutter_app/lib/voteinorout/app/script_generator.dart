@@ -82,6 +82,7 @@ class ScriptGenerator {
       topic: topic,
       length: length,
       style: style,
+      searchFacts: searchFacts,  // Pass facts here
     );
 
     if (localJson != null && localJson.trim().isNotEmpty) {
