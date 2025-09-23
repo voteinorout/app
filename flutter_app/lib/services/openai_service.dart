@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:retry/retry.dart';
 
 class OpenAIService {
   static const String _endpoint =
@@ -11,6 +12,7 @@ class OpenAIService {
     required String topic,
     required int length,
     required String style,
+    String? cta,
     List<String>? searchFacts,
   }) async {
     if (_endpoint.isEmpty) {
@@ -20,33 +22,52 @@ class OpenAIService {
       return null;
     }
 
-    final response = await http.post(
-      Uri.parse(_endpoint),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'topic': topic,
-        'length': length,
-        'style': style,
-        'searchFacts': searchFacts ?? [],
-      }),
-    );
+    final Uri endpoint = Uri.parse(_endpoint);
+    final Map<String, dynamic> payload = <String, dynamic>{
+      'topic': topic,
+      'length': length,
+      'style': style,
+      'searchFacts': searchFacts ?? <String>[],
+    };
+    if (cta != null && cta.trim().isNotEmpty) {
+      payload['cta'] = cta.trim();
+    }
 
-    if (response.statusCode == 200) {
-      final dynamic data = jsonDecode(response.body);
-      if (data is Map<String, dynamic>) {
-        final dynamic script = data['text'] ?? data['script'];
-        if (script is String && script.trim().isNotEmpty) {
-          return script.trim();
+    final RetryOptions retryOptions = RetryOptions(maxAttempts: 3);
+
+    try {
+      final http.Response response = await retryOptions.retry(
+        () => http
+            .post(
+              endpoint,
+              headers: const <String, String>{
+                'Content-Type': 'application/json',
+              },
+              body: jsonEncode(payload),
+            )
+            .timeout(const Duration(seconds: 15)),
+        retryIf: (Exception e) => true,
+      );
+
+      if (response.statusCode == 200) {
+        final dynamic data = jsonDecode(response.body);
+        if (data is Map<String, dynamic>) {
+          final dynamic script = data['text'] ?? data['script'];
+          if (script is String && script.trim().isNotEmpty) {
+            return script.trim();
+          }
+        } else if (data is String && data.trim().isNotEmpty) {
+          return data.trim();
         }
-      } else if (data is String && data.trim().isNotEmpty) {
-        return data.trim();
-      }
-      return null;
-    } else {
-      if (kDebugMode) {
+      } else if (kDebugMode) {
         debugPrint('OpenAIService error: ${response.statusCode} - ${response.body}');
       }
-      return null; // Fallback if needed
+    } on Exception catch (e) {
+      if (kDebugMode) {
+        debugPrint('OpenAIService request failed: $e');
+      }
     }
+
+    return null; // Fallback if needed
   }
 }

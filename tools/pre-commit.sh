@@ -4,7 +4,11 @@
 set -e
 
 ROOT_DIR=$(git rev-parse --show-toplevel)
-cd "$ROOT_DIR/flutter_app" || exit 1
+if [ -d "$ROOT_DIR/app/flutter_app" ]; then
+  cd "$ROOT_DIR/app/flutter_app" || exit 1
+else
+  cd "$ROOT_DIR/flutter_app" || exit 1
+fi
 
 echo "Running flutter format..."
 flutter format .

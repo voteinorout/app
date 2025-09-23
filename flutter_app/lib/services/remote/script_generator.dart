@@ -1,50 +1,28 @@
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:http/http.dart' as http;
 import 'package:vioo_app/models/script_segment.dart';
 import 'package:vioo_app/services/ml/local_llm_service.dart';
+import 'package:vioo_app/services/openai_service.dart';
 
 class ScriptGenerator {
-  static const String _proxyEndpoint =
-      String.fromEnvironment('SCRIPT_PROXY_ENDPOINT');
-
   static Future<String> generateScript(
     String topic,
     int length,
     String style, {
     String? cta,
   }) async {
-    if (_proxyEndpoint.isEmpty) {
-      return 'Script service unavailable. Configure SCRIPT_PROXY_ENDPOINT when building the app.';
-    }
-
     final String trimmedCta = (cta ?? '').trim();
-    final Map<String, dynamic> payload = <String, dynamic>{
-      'topic': topic,
-      'length': length,
-      'style': style,
-    };
-    if (trimmedCta.isNotEmpty) {
-      payload['cta'] = trimmedCta;
-    }
 
-    try {
-      final http.Response response = await http.post(
-        Uri.parse(_proxyEndpoint),
-        headers: const <String, String>{'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      );
+    final String? remoteScript = await OpenAIService.generateJsonScript(
+      topic: topic,
+      length: length,
+      style: style,
+      cta: trimmedCta.isEmpty ? null : trimmedCta,
+    );
 
-      if (response.statusCode == 200) {
-        final dynamic parsed = jsonDecode(response.body);
-        final String? script = _extractScript(parsed);
-        if (script != null && script.trim().isNotEmpty) {
-          return script.trim();
-        }
-      }
-    } catch (_) {
-      // Swallow remote errors to fall back to local generation.
+    if (remoteScript != null && remoteScript.trim().isNotEmpty) {
+      return remoteScript.trim();
     }
 
     // Local fallback retains legacy JSON format which we convert to readable text.
@@ -53,6 +31,7 @@ class ScriptGenerator {
       length: length,
       style: style,
       searchFacts: const <String>[],
+      cta: trimmedCta.isEmpty ? null : trimmedCta,
     );
 
     if (localJson != null && localJson.trim().isNotEmpty) {
@@ -80,20 +59,6 @@ class ScriptGenerator {
     }
 
     return 'Unable to generate a script right now. Try again with a different prompt.';
-  }
-
-  static String? _extractScript(dynamic parsed) {
-    if (parsed is String) {
-      return parsed;
-    }
-    if (parsed is Map<String, dynamic>) {
-      final dynamic candidate =
-          parsed['script'] ?? parsed['text'] ?? parsed['data'] ?? parsed['result'];
-      if (candidate is String) {
-        return candidate;
-      }
-    }
-    return null;
   }
 
   static List<ScriptSegment> _parseSegments(String rawContent, int length) {

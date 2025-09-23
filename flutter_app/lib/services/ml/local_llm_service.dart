@@ -56,12 +56,14 @@ class LocalLlmService {
     required int length,
     required String style,
     List<String>? searchFacts,
+    String? cta,
   }) async {
     // Attempt to use the hosted OpenAI/Vercel service first.
     final String? hostedResult = await OpenAIService.generateJsonScript(
       topic: topic,
       length: length,
       style: style,
+      cta: cta,
       searchFacts: searchFacts,
     );
     if (hostedResult != null && hostedResult.trim().isNotEmpty) {
