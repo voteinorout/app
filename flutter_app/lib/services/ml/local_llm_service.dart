@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
 
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:vioo_app/services/openai_service.dart';
@@ -66,12 +68,6 @@ class LocalLlmService {
       return hostedResult.trim();
     }
 
-    // Fallback to the local TFLite model if the hosted option fails.
-    final Interpreter? interpreter = await _loadInterpreter();
-    if (interpreter == null) {
-      return null;
-    }
-
     final String prompt = _buildPrompt(
       topic: topic,
       length: length,
@@ -79,14 +75,21 @@ class LocalLlmService {
       searchFacts: searchFacts ?? <String>[],
     );
 
-    try {
-      _lastError =
-          'Local LLM generation is unavailable: signature runner support is missing in this build (prompt length ${prompt.length}).';
-      return null;
-    } catch (e) {
-      _lastError = e.toString();
-      return null;
-    }
+    // No functional TFLite inference is wired up yet. Attempt to load the
+    // interpreter so we can surface a meaningful status message, then fall
+    // back to a deterministic rule-based generator that mirrors the legacy
+    // behaviour.
+    final Interpreter? interpreter = await _loadInterpreter();
+    _lastError = interpreter == null
+        ? 'Local LLM model not bundled; using deterministic fallback script.'
+        : 'Local LLM inference not implemented (prompt length ${prompt.length}); using deterministic fallback script.';
+
+    return _generateFallbackScript(
+      topic: topic,
+      length: length,
+      style: style,
+      searchFacts: searchFacts ?? <String>[],
+    );
   }
 
   /// Builds the textual prompt given to the local model.
@@ -117,6 +120,69 @@ class LocalLlmService {
     buffer.writeln('Respond with plain text (no JSON, no extra notes).');
 
     return buffer.toString();
+  }
+
+  static String _generateFallbackScript({
+    required String topic,
+    required int length,
+    required String style,
+    required List<String> searchFacts,
+  }) {
+    final int segmentCount = max(1, (length / 3).ceil());
+    final String normalizedStyle = style.trim().isEmpty ? 'Any' : style.trim();
+    final Map<String, String> toneDescriptors = <String, String>{
+      'Motivational': 'energised and forward-looking',
+      'Educational': 'clear, fact-driven',
+      'Comedy': 'playful and quick-witted',
+      'Empowered': 'confident and community-centred',
+      'Logical': 'calm and evidence-based',
+      'Sarcastic': 'sharp and ironic',
+      'Witty': 'clever and surprising',
+      'Fallacy': 'myth-busting and corrective',
+    };
+    final String tone = toneDescriptors[normalizedStyle] ?? 'attention-holding and direct';
+
+    final List<Map<String, dynamic>> segments = <Map<String, dynamic>>[];
+    final List<String> facts = searchFacts.where((String fact) => fact.trim().isNotEmpty).toList();
+
+    for (int i = 0; i < segmentCount; i++) {
+      final int start = i * 3;
+      final bool isFirst = i == 0;
+      final bool isLast = i == segmentCount - 1;
+      final String factLine = i < facts.length
+          ? facts[i]
+          : 'Remind viewers why $topic matters right now.';
+
+      String voiceover;
+      if (isFirst) {
+        voiceover = 'Hook (${tone}): $factLine';
+      } else if (isLast) {
+        voiceover = 'Close (${tone}): tie $topic to a concrete next step and invite viewers to act.';
+      } else {
+        voiceover = 'Beat ${i + 1} (${tone}): $factLine';
+      }
+
+      final String onScreen = isFirst
+          ? 'HOOK • ${topic.toUpperCase()}'
+          : isLast
+              ? 'CTA • What happens next?'
+              : 'Beat ${i + 1} • $topic';
+
+      final String visuals = isFirst
+          ? 'Fast cuts, bold typography introducing $topic.'
+          : isLast
+              ? 'Close-up faces, CTA card, campaign branding.'
+              : 'B-roll reinforcing $topic, captions with key phrases.';
+
+      segments.add(<String, dynamic>{
+        'startTime': start,
+        'voiceover': voiceover,
+        'onScreenText': onScreen,
+        'visualsActions': visuals,
+      });
+    }
+
+    return jsonEncode(<String, dynamic>{'segments': segments});
   }
 
   /// Exposes the last interpreter error for logging/debug UIs.
