@@ -11,6 +11,11 @@ else
 fi
 
 echo "Running flutter format..."
+if ! command -v flutter >/dev/null 2>&1; then
+  echo "Flutter SDK not found in PATH. Skipping formatting; install Flutter to enable this hook."
+  exit 0
+fi
+
 flutter format .
 
 # If formatting produced changes, abort the commit so the developer can review and add them.

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:vioo_app/models/script_segment.dart';
 import 'package:vioo_app/services/ml/local_llm_service.dart';
 import 'package:vioo_app/services/openai_service.dart';
@@ -122,6 +123,10 @@ class ScriptGenerator {
       return <ScriptSegment>[];
     }
   }
+
+  @visibleForTesting
+  static List<ScriptSegment> parseSegmentsForTest(String rawContent, int length) =>
+      _parseSegments(rawContent, length);
 
   static int _coerceStartTime(dynamic value, int fallback) {
     if (value is int) {
