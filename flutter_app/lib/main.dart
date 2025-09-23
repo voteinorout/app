@@ -1,6 +1,9 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:vioo_app/firebase_options.dart';
 import 'package:vioo_app/voteinorout/app/transcription_service.dart';
 import 'screens/config_screen.dart';
 import 'screens/home_screen.dart';
@@ -10,6 +13,15 @@ import 'screens/transcription_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: '.env', isOptional: true);
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    if (kDebugMode) {
+      debugPrint('Firebase initialization skipped: $e');
+    }
+  }
   await TranscriptionService.init();
   runApp(const VoteInOrOutApp());
 }
