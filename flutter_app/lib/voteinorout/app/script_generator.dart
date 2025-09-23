@@ -119,7 +119,12 @@ class ScriptGenerator {
   required List<String> searchFacts,
   String? cta,
 }) {
-  final String styleFragment = (style.isEmpty || style == 'Other') ? 'any' : style.trim().toLowerCase();
+  final String trimmedStyle = style.trim();
+  final String normalizedStyle =
+      trimmedStyle.isEmpty ? 'Any' : trimmedStyle;
+  final String styleFragment =
+      normalizedStyle == 'Other' ? 'any' : normalizedStyle.toLowerCase();
+  final String? tone = _tones[normalizedStyle];
   final StringBuffer buffer = StringBuffer()
     ..writeln('Generate a viral video script for "$topic" in $styleFragment style, ')
     ..writeln('length about $length seconds, using the Missy Elliott method to ensure hooks every 3 seconds.')
@@ -140,6 +145,10 @@ class ScriptGenerator {
     ..writeln('- Keep claims accurate and responsibly framed; avoid personal attacks or demeaning language.')
     ..writeln('- Where relevant, mention reputable sources or how to verify claims.')
     ..writeln('- Close with a constructive, non-harassing civic action (learn more, verify, vote, contact reps).');
+
+  if (tone != null) {
+    buffer.writeln('\nApply this tone: $tone');
+  }
 
   if (searchFacts.isNotEmpty) {
     buffer.writeln('\nOptionally reference or paraphrase these relevant insights to add credibility and surprise (cite sources briefly if used):');

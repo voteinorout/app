@@ -66,17 +66,12 @@ class LocalLlmService {
       searchFacts: searchFacts ?? <String>[],
     );
 
-    try {
-      // Since signature runner support is missing, simulate a plain text
-      // response. This is a placeholder; actual implementation depends on
-      // your TFLite model. For now, rely on the prompt to guide the output.
-      _lastError =
-          'Local LLM generation is unavailable: signature runner support is missing in this build (prompt length ${prompt.length}).';
-      return null; // Graceful fallback; no crash.
-    } catch (Object error) {
-      _lastError = error.toString();
-      return null;
-    }
+    // Since signature runner support is missing, simulate a plain text
+    // response. This is a placeholder; actual implementation depends on
+    // your TFLite model. For now, rely on the prompt to guide the output.
+    _lastError =
+        'Local LLM generation is unavailable: signature runner support is missing in this build (prompt length ${prompt.length}).';
+    return null; // Graceful fallback; no crash.
   }
 
   /// Builds the textual prompt given to the local model.
@@ -111,11 +106,6 @@ class LocalLlmService {
 
   /// Exposes the last interpreter error for logging/debug UIs.
   static String? get lastError => _lastError;
-
-  static Future<List<String>> _fetchSearchFacts(String topic) async {
-    // Comment out or return empty to disable (Streamlit basic mode doesn't use search).
-    return <String>[];
-  }
 
   /// Releases interpreter resources. Useful for hot reload or when the app no
   /// longer needs the local model.
