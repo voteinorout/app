@@ -5,7 +5,6 @@ import 'dart:math';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:vioo_app/models/script_segment.dart';
 import 'package:vioo_app/services/openai_service.dart';
-import 'package:vioo_app/services/remote/script_generator.dart';
 
 /// Simple wrapper around a TensorFlow Lite text generation model that turns
 /// prompts into script JSON. The actual model is expected to expose a
@@ -203,7 +202,7 @@ class LocalLlmService {
       searchFacts: searchFacts ?? <String>[],
     );
     final List<ScriptSegment> segments =
-        ScriptGenerator.parseSegmentsForTest(rawJson, length);
+        _parseSegments(rawJson, length);
     if (cta != null && cta.trim().isNotEmpty && segments.isNotEmpty) {
       final ScriptSegment last = segments.last;
       segments[segments.length - 1] = ScriptSegment(
@@ -226,5 +225,83 @@ class LocalLlmService {
       _interpreter!.close();
       _interpreter = null;
     }
+  }
+
+  static List<ScriptSegment> _parseSegments(String rawContent, int length) {
+    final String cleaned = rawContent
+        .replaceAll(RegExp(r'^```json', multiLine: true), '')
+        .replaceAll(RegExp(r'^```', multiLine: true), '')
+        .replaceAll('```', '')
+        .trim();
+
+    try {
+      final dynamic decoded = jsonDecode(cleaned);
+      final List<dynamic>? segmentList;
+
+      if (decoded is Map<String, dynamic>) {
+        segmentList = decoded['segments'] as List<dynamic>?;
+      } else if (decoded is List<dynamic>) {
+        segmentList = decoded;
+      } else {
+        segmentList = null;
+      }
+
+      if (segmentList == null) {
+        return <ScriptSegment>[];
+      }
+
+      final List<Map<String, dynamic>> typedSegments =
+          segmentList.whereType<Map<String, dynamic>>().toList();
+      final int expectedSegments = max(1, (length / 3).ceil());
+
+      final List<ScriptSegment> scriptSegments = <ScriptSegment>[];
+
+      for (int i = 0; i < typedSegments.length; i++) {
+        final Map<String, dynamic> segment = typedSegments[i];
+        final int startTime = _coerceStartTime(segment['startTime'], i * 3);
+        final String voiceover = segment['voiceover']?.toString().trim() ?? '';
+        final String onScreenText =
+            segment['onScreenText']?.toString().trim() ?? '';
+        final String visualsActions =
+            segment['visualsActions']?.toString().trim() ?? '';
+
+        if (voiceover.isEmpty) {
+          continue;
+        }
+
+        scriptSegments.add(
+          ScriptSegment(
+            startTime: startTime,
+            voiceover: voiceover,
+            onScreenText: onScreenText,
+            visualsActions: visualsActions,
+          ),
+        );
+
+        if (scriptSegments.length >= expectedSegments) {
+          break;
+        }
+      }
+
+      return scriptSegments;
+    } catch (_) {
+      return <ScriptSegment>[];
+    }
+  }
+
+  static int _coerceStartTime(dynamic value, int fallback) {
+    if (value is int) {
+      return value;
+    }
+    if (value is num) {
+      return value.round();
+    }
+    if (value is String) {
+      final Match? match = RegExp(r'(\d+)').firstMatch(value);
+      if (match != null) {
+        return int.parse(match.group(1)!);
+      }
+    }
+    return fallback;
   }
 }
