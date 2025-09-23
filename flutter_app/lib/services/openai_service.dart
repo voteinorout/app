@@ -4,8 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class OpenAIService {
-  static const String _baseUrl =
-      'https://app-qmu0bvl79-lisa-mollicas-projects-f40db721.vercel.app';
+  static const String _endpoint =
+      String.fromEnvironment('SCRIPT_PROXY_ENDPOINT');
 
   static Future<String?> generateJsonScript({
     required String topic,
@@ -13,8 +13,15 @@ class OpenAIService {
     required String style,
     List<String>? searchFacts,
   }) async {
+    if (_endpoint.isEmpty) {
+      if (kDebugMode) {
+        debugPrint('SCRIPT_PROXY_ENDPOINT not provided; skipping hosted generation.');
+      }
+      return null;
+    }
+
     final response = await http.post(
-      Uri.parse('$_baseUrl/api/generate-script'),
+      Uri.parse(_endpoint),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'topic': topic,

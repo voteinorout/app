@@ -7,7 +7,7 @@ import 'package:vioo_app/services/ml/local_llm_service.dart';
 
 class ScriptGenerator {
   static const String _proxyEndpoint =
-      'https://app-qmu0bvl79-lisa-mollicas-projects-f40db721.vercel.app/api/generate-script';
+      String.fromEnvironment('SCRIPT_PROXY_ENDPOINT');
 
   static Future<String> generateScript(
     String topic,
@@ -15,6 +15,10 @@ class ScriptGenerator {
     String style, {
     String? cta,
   }) async {
+    if (_proxyEndpoint.isEmpty) {
+      return 'Script service unavailable. Configure SCRIPT_PROXY_ENDPOINT when building the app.';
+    }
+
     final String trimmedCta = (cta ?? '').trim();
     final Map<String, dynamic> payload = <String, dynamic>{
       'topic': topic,
