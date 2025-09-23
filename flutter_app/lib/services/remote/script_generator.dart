@@ -27,39 +27,35 @@ class ScriptGenerator {
     }
 
     // Local fallback retains legacy JSON format which we convert to readable text.
-    final String? localJson = await LocalLlmService.generateJsonScript(
+    final List<ScriptSegment> localSegments =
+        await LocalLlmService.generateFallbackSegments(
       topic: topic,
       length: length,
       style: style,
-      searchFacts: const <String>[],
       cta: trimmedCta.isEmpty ? null : trimmedCta,
     );
 
-    if (localJson != null && localJson.trim().isNotEmpty) {
-      final List<ScriptSegment> localSegments =
-          _parseSegments(localJson, length);
-      if (localSegments.isNotEmpty) {
-        final StringBuffer buffer = StringBuffer();
-        for (final ScriptSegment segment in localSegments) {
-          final int end = segment.startTime + 3;
-          buffer.writeln('${segment.startTime}-$end s');
-          buffer.writeln('Voiceover: ${segment.voiceover}');
-          if (segment.onScreenText.isNotEmpty) {
-            buffer.writeln('On-screen: ${segment.onScreenText}');
-          }
-          if (segment.visualsActions.isNotEmpty) {
-            buffer.writeln('Visuals: ${segment.visualsActions}');
-          }
-          buffer.writeln();
-        }
-        if (trimmedCta.isNotEmpty) {
-          buffer.writeln('Call to Action: $trimmedCta');
-        }
-        return buffer.toString().trim();
-      }
+    if (localSegments.isEmpty) {
+      return 'Unable to generate a script right now. Try again with a different prompt.';
     }
 
-    return 'Unable to generate a script right now. Try again with a different prompt.';
+    final StringBuffer buffer = StringBuffer();
+    for (final ScriptSegment segment in localSegments) {
+      final int end = segment.startTime + 3;
+      buffer.writeln('${segment.startTime}-$end s');
+      buffer.writeln('Voiceover: ${segment.voiceover}');
+      if (segment.onScreenText.isNotEmpty) {
+        buffer.writeln('On-screen: ${segment.onScreenText}');
+      }
+      if (segment.visualsActions.isNotEmpty) {
+        buffer.writeln('Visuals: ${segment.visualsActions}');
+      }
+      buffer.writeln();
+    }
+    if (trimmedCta.isNotEmpty) {
+      buffer.writeln('Call to Action: $trimmedCta');
+    }
+    return buffer.toString().trim();
   }
 
   static List<ScriptSegment> _parseSegments(String rawContent, int length) {

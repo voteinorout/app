@@ -33,7 +33,11 @@ class OpenAIService {
       payload['cta'] = cta.trim();
     }
 
-    final RetryOptions retryOptions = RetryOptions(maxAttempts: 3);
+    final RetryOptions retryOptions = RetryOptions(
+      maxAttempts: 3,
+      delayFactor: const Duration(milliseconds: 500),
+      maxDelay: const Duration(seconds: 2),
+    );
 
     try {
       final http.Response response = await retryOptions.retry(
@@ -46,7 +50,12 @@ class OpenAIService {
               body: jsonEncode(payload),
             )
             .timeout(const Duration(seconds: 15)),
-        retryIf: (Exception e) => true,
+        retryIf: (Exception _) => true,
+        onRetry: (Exception e) {
+          if (kDebugMode) {
+            debugPrint('Retrying script proxy request after failure: $e');
+          }
+        },
       );
 
       if (response.statusCode == 200) {

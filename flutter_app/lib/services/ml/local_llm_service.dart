@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:tflite_flutter/tflite_flutter.dart';
+import 'package:vioo_app/models/script_segment.dart';
 import 'package:vioo_app/services/openai_service.dart';
+import 'package:vioo_app/services/remote/script_generator.dart';
 
 /// Simple wrapper around a TensorFlow Lite text generation model that turns
 /// prompts into script JSON. The actual model is expected to expose a
@@ -185,6 +187,33 @@ class LocalLlmService {
     }
 
     return jsonEncode(<String, dynamic>{'segments': segments});
+  }
+
+  static Future<List<ScriptSegment>> generateFallbackSegments({
+    required String topic,
+    required int length,
+    required String style,
+    String? cta,
+    List<String>? searchFacts,
+  }) async {
+    final String rawJson = _generateFallbackScript(
+      topic: topic,
+      length: length,
+      style: style,
+      searchFacts: searchFacts ?? <String>[],
+    );
+    final List<ScriptSegment> segments =
+        ScriptGenerator.parseSegmentsForTest(rawJson, length);
+    if (cta != null && cta.trim().isNotEmpty && segments.isNotEmpty) {
+      final ScriptSegment last = segments.last;
+      segments[segments.length - 1] = ScriptSegment(
+        startTime: last.startTime,
+        voiceover: '${last.voiceover}\nCTA: ${cta.trim()}',
+        onScreenText: last.onScreenText,
+        visualsActions: last.visualsActions,
+      );
+    }
+    return segments;
   }
 
   /// Exposes the last interpreter error for logging/debug UIs.
