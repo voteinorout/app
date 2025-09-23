@@ -112,7 +112,7 @@ class LocalLlmService {
       )
       ..writeln('Structure as timed beats: 0-3s: [hook], 3-6s: [next beat], etc.')
       ..writeln('For each beat, include: voiceover, on-screen text (if any), visuals/actions.')
-      ..writeln('End with a crisp CTA. Keep politically impactful and educational if relevant.');
+      ..writeln('End with a crisp CTA that fits the topic (e.g., learn more, try it out). Keep it engaging and relevant to the audience.');
 
     if (searchFacts.isNotEmpty) {
       buffer.writeln('\nOptionally paraphrase these facts:');
@@ -135,48 +135,48 @@ class LocalLlmService {
     final int segmentCount = max(1, (length / 3).ceil());
     final String normalizedStyle = style.trim().isEmpty ? 'Any' : style.trim();
     final Map<String, String> toneDescriptors = <String, String>{
-      'Motivational': 'energised and forward-looking',
-      'Educational': 'clear, fact-driven',
-      'Comedy': 'playful and quick-witted',
-      'Empowered': 'confident and community-centred',
-      'Logical': 'calm and evidence-based',
-      'Sarcastic': 'sharp and ironic',
-      'Witty': 'clever and surprising',
-      'Fallacy': 'myth-busting and corrective',
+      'Motivational': 'energized and inspiring',
+      'Educational': 'clear and informative',
+      'Comedy': 'playful and funny',
+      'Exciting': 'high-energy and thrilling',
+      'Relaxed': 'calm and easygoing',
+      'Creative': 'imaginative and unique',
     };
-    final String tone = toneDescriptors[normalizedStyle] ?? 'attention-holding and direct';
+    final String tone =
+        toneDescriptors[normalizedStyle] ?? 'attention-holding and direct';
 
     final List<Map<String, dynamic>> segments = <Map<String, dynamic>>[];
-    final List<String> facts = searchFacts.where((String fact) => fact.trim().isNotEmpty).toList();
+    final List<String> facts =
+        searchFacts.where((String fact) => fact.trim().isNotEmpty).toList();
 
     for (int i = 0; i < segmentCount; i++) {
       final int start = i * 3;
       final bool isFirst = i == 0;
       final bool isLast = i == segmentCount - 1;
-      final String factLine = i < facts.length
-          ? facts[i]
-          : 'Remind viewers why $topic matters right now.';
+      final String factLine =
+          i < facts.length ? facts[i] : 'Share something useful about $topic.';
 
-      String voiceover;
+      final String voiceover;
       if (isFirst) {
-        voiceover = 'Hook (${tone}): $factLine';
+        voiceover = 'Hook ($tone): $factLine';
       } else if (isLast) {
-        voiceover = 'Close (${tone}): tie $topic to a concrete next step and invite viewers to act.';
+        voiceover =
+            'Close ($tone): wrap up $topic with a clear takeaway or reason to stay curious.';
       } else {
-        voiceover = 'Beat ${i + 1} (${tone}): $factLine';
+        voiceover = 'Beat ${i + 1} ($tone): $factLine';
       }
 
       final String onScreen = isFirst
           ? 'HOOK • ${topic.toUpperCase()}'
           : isLast
-              ? 'CTA • What happens next?'
+              ? 'Next steps • $topic'
               : 'Beat ${i + 1} • $topic';
 
       final String visuals = isFirst
-          ? 'Fast cuts, bold typography introducing $topic.'
+          ? 'Bold typography, punchy imagery introducing $topic.'
           : isLast
-              ? 'Close-up faces, CTA card, campaign branding.'
-              : 'B-roll reinforcing $topic, captions with key phrases.';
+              ? 'Close-up shots, call-to-action card, topic visuals.'
+              : 'B-roll supporting $topic with captions for key phrases.';
 
       segments.add(<String, dynamic>{
         'startTime': start,
