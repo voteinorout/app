@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:tflite_flutter/tflite_flutter.dart';
+import 'package:vioo_app/services/openai_service.dart';
 
 /// Simple wrapper around a TensorFlow Lite text generation model that turns
 /// prompts into script JSON. The actual model is expected to expose a
@@ -54,6 +55,18 @@ class LocalLlmService {
     required String style,
     List<String>? searchFacts,
   }) async {
+    // Attempt to use the hosted OpenAI/Vercel service first.
+    final String? hostedResult = await OpenAIService.generateJsonScript(
+      topic: topic,
+      length: length,
+      style: style,
+      searchFacts: searchFacts,
+    );
+    if (hostedResult != null && hostedResult.trim().isNotEmpty) {
+      return hostedResult.trim();
+    }
+
+    // Fallback to the local TFLite model if the hosted option fails.
     final Interpreter? interpreter = await _loadInterpreter();
     if (interpreter == null) {
       return null;
@@ -66,12 +79,14 @@ class LocalLlmService {
       searchFacts: searchFacts ?? <String>[],
     );
 
-    // Since signature runner support is missing, simulate a plain text
-    // response. This is a placeholder; actual implementation depends on
-    // your TFLite model. For now, rely on the prompt to guide the output.
-    _lastError =
-        'Local LLM generation is unavailable: signature runner support is missing in this build (prompt length ${prompt.length}).';
-    return null; // Graceful fallback; no crash.
+    try {
+      _lastError =
+          'Local LLM generation is unavailable: signature runner support is missing in this build (prompt length ${prompt.length}).';
+      return null;
+    } catch (e) {
+      _lastError = e.toString();
+      return null;
+    }
   }
 
   /// Builds the textual prompt given to the local model.
