@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:vioo_app/services/remote/script_generator.dart';
 
 class ConfigScreen extends StatefulWidget {
@@ -55,18 +54,6 @@ class _ConfigScreenState extends State<ConfigScreen>
         _style == 'Other' ? 'Unspecified' : _style.trim();
     final String cta = _ctaController.text.trim();
 
-    // Try compile-time variable first, then fallback to dotenv
-    final String compileTimeKey = const String.fromEnvironment('OPENAI_API_KEY');
-    final String apiKey =
-        (compileTimeKey.isNotEmpty ? compileTimeKey : (dotenv.env['OPENAI_API_KEY'] ?? '')).trim();
-
-    if (apiKey.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('OpenAI API key missing. Add it to .env.')),
-      );
-      return;
-    }
-
     setState(() {
       _isSubmitting = true;
       _generatedScript = null;
@@ -94,7 +81,7 @@ class _ConfigScreenState extends State<ConfigScreen>
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Generation failed: $e. Check your API key or network.')),
+        SnackBar(content: Text('Generation failed: $e. Check your connection or try again.')),
       );
     } finally {
       if (mounted) {

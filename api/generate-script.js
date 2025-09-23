@@ -5,8 +5,8 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { topic, length, style, searchFacts } = req.body;
-  const prompt = `Generate a viral video script for "${topic}" in ${style || 'any'} style, length about ${length} seconds, using hooks every 3 seconds. Structure as timed beats: 0-3s: [hook], etc. Include voiceover, text, visuals. End with CTA. Paraphrase facts: ${searchFacts ? searchFacts.join(', ') : ''}. Respond in plain text.`;
+  const { topic, length, style, cta, searchFacts } = req.body;
+  const prompt = `Generate a viral video script for "${topic}" in ${style || 'any'} style, length about ${length} seconds, using hooks every 3 seconds. Structure as timed beats: 0-3s: [hook], etc. Include voiceover, text, visuals. End with CTA${cta ? `: "${cta}"` : ''}. Paraphrase facts: ${searchFacts ? searchFacts.join(', ') : ''}. Respond in plain text.`;
 
   try {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });

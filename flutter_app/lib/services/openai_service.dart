@@ -4,7 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class OpenAIService {
-  static const String _baseUrl = 'https://app-bice-beta-97.vercel.app';
+  static const String _baseUrl =
+      'https://app-qmu0bvl79-lisa-mollicas-projects-f40db721.vercel.app';
 
   static Future<String?> generateJsonScript({
     required String topic,
@@ -24,8 +25,16 @@ class OpenAIService {
     );
 
     if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data['text'] as String?;
+      final dynamic data = jsonDecode(response.body);
+      if (data is Map<String, dynamic>) {
+        final dynamic script = data['text'] ?? data['script'];
+        if (script is String && script.trim().isNotEmpty) {
+          return script.trim();
+        }
+      } else if (data is String && data.trim().isNotEmpty) {
+        return data.trim();
+      }
+      return null;
     } else {
       if (kDebugMode) {
         debugPrint('OpenAIService error: ${response.statusCode} - ${response.body}');
