@@ -13,10 +13,11 @@ How to run
 ```bash
 cd /Users/lisamollica/Documents/GitHub/vioo-app/flutter_app
 flutter pub get
-flutter run
+flutter run --dart-define=SCRIPT_PROXY_ENDPOINT=https://your-vercel-app.vercel.app/api/generate-script
 ```
 
 Notes
+- Provide a publicly accessible proxy endpoint via `SCRIPT_PROXY_ENDPOINT` using `--dart-define` (see example above). Without it the app falls back to the deterministic local generator and logs guidance in debug builds.
 - This scaffold is small and intended for development only. For a full app, run `flutter create` which generates platform folders (`ios/`, `android/`, etc.).
 - If you want, I can generate a complete `flutter create` project here (it will add `ios/`, `android/`, and other files). That requires Flutter installed locally or I can add the files manually.
 

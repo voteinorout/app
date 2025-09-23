@@ -6,7 +6,7 @@ Quick start (Flutter front-end)
 ```bash
 cd flutter_app
 flutter pub get
-flutter run
+flutter run --dart-define=SCRIPT_PROXY_ENDPOINT=https://your-vercel-app.vercel.app/api/generate-script
 ```
 
 Run tests
@@ -22,5 +22,7 @@ Format code
 cd flutter_app
 flutter format .
 ```
+
+The Flutter client expects a proxy endpoint that handles OpenAI/Serper access. Pass it at build time with `--dart-define=SCRIPT_PROXY_ENDPOINT=<https://.../api/generate-script>` (the app asserts if this value is missing).
 
 See `CONTRIBUTING.md` for developer setup and recommended pre-commit hook.

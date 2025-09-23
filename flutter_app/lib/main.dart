@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vioo_app/services/audio/transcription_service.dart';
@@ -6,8 +7,20 @@ import 'home_screen.dart';
 import 'script_screen.dart';
 import 'transcription_screen.dart';
 
+const String _scriptProxyEndpoint =
+    String.fromEnvironment('SCRIPT_PROXY_ENDPOINT');
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  assert(
+    _scriptProxyEndpoint.isNotEmpty,
+    'SCRIPT_PROXY_ENDPOINT is missing. Run with --dart-define=SCRIPT_PROXY_ENDPOINT=https://<your-proxy>/api/generate-script.',
+  );
+  if (_scriptProxyEndpoint.isEmpty && kDebugMode) {
+    debugPrint(
+      'SCRIPT_PROXY_ENDPOINT missing. Provide it via --dart-define to enable hosted script generation.',
+    );
+  }
   await TranscriptionService.init();
   runApp(const VoteInOrOutApp());
 }
