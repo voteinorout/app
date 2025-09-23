@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:vioo_app/voteinorout/app/transcription_service.dart';
+import 'package:vioo_app/services/audio/transcription_service.dart';
 import 'config_screen.dart';
 import 'home_screen.dart';
 import 'script_screen.dart';

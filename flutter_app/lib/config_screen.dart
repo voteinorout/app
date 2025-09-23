@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:vioo_app/voteinorout/app/script_generator.dart';
+import 'package:vioo_app/services/remote/script_generator.dart';
 
 class ConfigScreen extends StatefulWidget {
   const ConfigScreen({super.key});

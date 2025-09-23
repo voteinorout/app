@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:vioo_app/models/script_segment.dart';
-import 'package:vioo_app/voteinorout/app/local_llm_service.dart';
+import 'package:vioo_app/services/ml/local_llm_service.dart';
 
 class ScriptGenerator {
   static const String _openAiEndpoint =
