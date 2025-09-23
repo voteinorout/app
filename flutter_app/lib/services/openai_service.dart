@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class OpenAIService {
-  static const String _baseUrl = 'https://app-git-vercel-lisa-mollicas-projects-f40db721.vercel.app';
+  static const String _baseUrl = 'https://app-bice-beta-97.vercel.app';
 
   static Future<String?> generateJsonScript({
     required String topic,
