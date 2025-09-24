@@ -107,9 +107,10 @@ class LocalLlmService {
     required String style,
     required List<String> searchFacts,
   }) {
-    final String tone = (style.isEmpty || style == 'Other')
-        ? 'lighthearted and comedic'
-        : style.trim();
+    final String trimmedStyle = style.trim();
+    final bool hasExplicitStyle =
+        trimmedStyle.isNotEmpty && trimmedStyle.toLowerCase() != 'other';
+    final String tone = hasExplicitStyle ? trimmedStyle : 'lighthearted and comedic';
     final StringBuffer buffer = StringBuffer()
       ..writeln(
         'You are a campaign storyteller crafting a $length-second video script about "$topic" in a ${tone.toLowerCase()} tone.',
@@ -124,7 +125,10 @@ class LocalLlmService {
       ..writeln(
         '24-${length}s: [payoff/CTA] — resolve with an inspiring lead-in to the CTA.',
       )
-      ..writeln('Never mention on-screen text or captions. Use sharp humor, puns, and fluid metaphors tailored to the topic.');
+      ..writeln('Never mention on-screen text or captions. Use sharp humor, puns, and fluid metaphors tailored to the topic.')
+      ..writeln(hasExplicitStyle
+          ? 'Match that tone in every beat without drifting.'
+          : 'Keep it quick, warm, and just mischievous enough to stay memorable.');
 
     if (searchFacts.isNotEmpty) {
       buffer.writeln('\nWeave in and paraphrase relevant details from:');

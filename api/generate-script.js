@@ -12,6 +12,11 @@ export default async function handler(req, res) {
     ? searchFacts.filter((fact) => typeof fact === 'string' && fact.trim().length > 0)
     : [];
   const trimmedCta = typeof cta === 'string' ? cta.trim() : '';
+  const rawStyle = typeof style === 'string' ? style.trim() : '';
+  const styleDisplay = rawStyle.length === 0 ? 'lighthearted and comedic' : rawStyle;
+  const styleDirective = rawStyle.length === 0
+    ? 'keep it quick, warm, and a little mischievous'
+    : `make every line feel ${rawStyle.toLowerCase()}`;
   const factsInstruction = facts.length > 0
     ? `Weave in and lightly paraphrase these useful details if relevant: ${facts.join('; ')}.`
     : 'Ground each beat in believable, specific details without inventing statistics.';
@@ -21,7 +26,7 @@ export default async function handler(req, res) {
   const ctaGuideline = trimmedCta
     ? `- End with the provided CTA: "${trimmedCta}".`
     : '- End with a CTA you invent that naturally follows the story—make it specific (e.g., text a friend, sign a pledge, volunteer) and never default to vague "learn more" language.';
-  const prompt = `You are a campaign storyteller crafting a ${totalLength}-second video script about "${topic}" in a ${style || 'lighthearted and comedic'} tone.
+  const prompt = `You are a campaign storyteller crafting a ${totalLength}-second video script about "${topic}" in a ${styleDisplay} tone.
 
 Break the script into time-stamped beats of roughly ${beatLength} seconds each using this exact layout and headings:
 
@@ -53,7 +58,7 @@ Guidelines:
 - Never mention on-screen text or captions.
 - ${factsInstruction}
 - Avoid repetitive phrasing (e.g., no overusing 'imagine' or similar terms).
-- Keep the tone ${style || 'lighthearted and comedic'}, fostering engagement without misleading claims.
+- Always ${styleDirective}, keeping engagement high without misleading claims.
 - ${ctaGuideline}
 
 Return only the formatted beats in plain text.`;
