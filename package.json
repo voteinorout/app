@@ -1,0 +1,27 @@
+{
+  "name": "vioo-app",
+  "version": "1.0.0",
+  "description": "Main app for VoteInOut — includes script generation, video tools, and civic engagement features, with more coming soon.",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/voteinorout/app.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "openai": "^4.26.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "bugs": {
+    "url": "https://github.com/voteinorout/app/issues"
+  },
+  "homepage": "https://github.com/voteinorout/app#readme"
+}

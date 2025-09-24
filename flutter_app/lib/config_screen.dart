@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:vioo_app/voteinorout/app/script_generator.dart';
+import 'package:flutter/services.dart';
+import 'package:vioo_app/services/remote/script_generator.dart';
 
 class ConfigScreen extends StatefulWidget {
   const ConfigScreen({super.key});
@@ -16,16 +16,19 @@ class _ConfigScreenState extends State<ConfigScreen>
   final TextEditingController _topicController = TextEditingController();
   final TextEditingController _lengthController =
       TextEditingController(text: '30');
+  late final ScrollController _scriptScrollController;
 
   late TabController _tabController;
   String _style = 'Educational';
   bool _isSubmitting = false;
   String? _generatedScript;
+  bool _usedHostedGenerator = true;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _scriptScrollController = ScrollController();
   }
 
   @override
@@ -33,6 +36,7 @@ class _ConfigScreenState extends State<ConfigScreen>
     _ctaController.dispose();
     _topicController.dispose();
     _lengthController.dispose();
+    _scriptScrollController.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -55,21 +59,10 @@ class _ConfigScreenState extends State<ConfigScreen>
         _style == 'Other' ? 'Unspecified' : _style.trim();
     final String cta = _ctaController.text.trim();
 
-    // Try compile-time variable first, then fallback to dotenv
-    final String compileTimeKey = const String.fromEnvironment('OPENAI_API_KEY');
-    final String apiKey =
-        (compileTimeKey.isNotEmpty ? compileTimeKey : (dotenv.env['OPENAI_API_KEY'] ?? '')).trim();
-
-    if (apiKey.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('OpenAI API key missing. Add it to .env.')),
-      );
-      return;
-    }
-
     setState(() {
       _isSubmitting = true;
       _generatedScript = null;
+      _usedHostedGenerator = true;
     });
 
     try {
@@ -86,7 +79,15 @@ class _ConfigScreenState extends State<ConfigScreen>
 
       setState(() {
         _generatedScript = script.trim();
+        _usedHostedGenerator = ScriptGenerator.lastRunUsedHosted;
       });
+
+      final String? warning = ScriptGenerator.lastRunWarning;
+      if (warning != null && warning.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(warning)),
+        );
+      }
 
       _tabController.animateTo(1);
     } catch (e) {
@@ -94,13 +95,20 @@ class _ConfigScreenState extends State<ConfigScreen>
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Generation failed: $e. Check your API key or network.')),
+        SnackBar(content: Text('Generation failed: $e. Check your connection or try again.')),
       );
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);
       }
     }
+  }
+
+  void _copyScript(BuildContext context, String script) {
+    Clipboard.setData(ClipboardData(text: script));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Script copied to clipboard')),
+    );
   }
 
   @override
@@ -206,24 +214,64 @@ class _ConfigScreenState extends State<ConfigScreen>
             ),
           ),
           SafeArea(
-            child: _generatedScript == null
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Text(
-                        'Generate a script in the CONFIGURE tab to view it here.',
-                        style: theme.textTheme.bodyMedium,
-                        textAlign: TextAlign.center,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              child: _generatedScript == null
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Text(
+                          'Generate a script in the CONFIGURE tab to view it here.',
+                          style: theme.textTheme.bodyMedium,
+                          textAlign: TextAlign.center,
+                        ),
                       ),
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        Expanded(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surface.withValues(alpha: 0.35),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Scrollbar(
+                                controller: _scriptScrollController,
+                                thumbVisibility: true,
+                                child: SingleChildScrollView(
+                                  controller: _scriptScrollController,
+                                  primary: false,
+                                  padding: const EdgeInsets.all(16),
+                                  child: SelectableText(
+                                    _generatedScript!,
+                                    style: theme.textTheme.bodyMedium,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        if (!_usedHostedGenerator) ...<Widget>[
+                          Text(
+                            'Local LLM Generator',
+                            style: theme.textTheme.bodySmall!.copyWith(
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                        ElevatedButton(
+                          onPressed: () => _copyScript(context, _generatedScript!),
+                          child: const Text('Copy script'),
+                        ),
+                      ],
                     ),
-                  )
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.all(16.0),
-                    child: SelectableText(
-                      _generatedScript!,
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                  ),
+            ),
           ),
         ],
       ),

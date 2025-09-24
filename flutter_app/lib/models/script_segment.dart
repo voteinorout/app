@@ -13,6 +13,6 @@ class ScriptSegment {
 
   @override
   String toString() {
-    return "$startTime-${startTime + 3}s: Voiceover: $voiceover | On-screen Text: $onScreenText | Visuals/Actions: $visualsActions";
+    return "$startTime-${startTime + 6}s: Voiceover: $voiceover | Visuals: $visualsActions";
   }
 }

@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:vioo_app/voteinorout/app/transcription_service.dart';
+import 'package:vioo_app/services/transcription_service.dart';
 
 class TranscriptionScreen extends StatefulWidget {
   const TranscriptionScreen({super.key});
@@ -115,8 +115,6 @@ class _TranscriptionScreenState extends State<TranscriptionScreen> {
     if (!_micActive) {
       return;
     }
-    // Currently the service stops listening automatically once the future
-    // resolves. For manual cancellation we dispose and re-initialise.
     await TranscriptionService.dispose();
     await _initializeSpeech();
     setState(() {
