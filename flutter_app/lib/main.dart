@@ -10,6 +10,13 @@ import 'transcription_screen.dart';
 const String _scriptProxyEndpoint =
     String.fromEnvironment('SCRIPT_PROXY_ENDPOINT');
 
+// Running full `TranscriptionService.init()` during startup blocks the first
+// frame while iOS/Android show the microphone permission dialog.  Enable this
+// flag when you explicitly want to exercise transcription workflows on app
+// launch.
+const bool _eagerSpeechInit =
+    bool.fromEnvironment('EAGER_SPEECH_INIT', defaultValue: false);
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   assert(
@@ -21,7 +28,9 @@ Future<void> main() async {
       'SCRIPT_PROXY_ENDPOINT missing. Provide it via --dart-define to enable hosted script generation.',
     );
   }
-  await TranscriptionService.init();
+  if (_eagerSpeechInit) {
+    await TranscriptionService.init();
+  }
   runApp(const VoteInOrOutApp());
 }
 
