@@ -25,12 +25,12 @@ void main() {
       ''';
 
       final List<ScriptSegment> segments =
-          ScriptGenerator.parseSegmentsForTest(rawJson, 6);
+          ScriptGenerator.parseSegmentsForTest(rawJson, 12);
 
       expect(segments, hasLength(2));
       expect(segments.first.startTime, 0);
       expect(segments.first.voiceover, contains('dogs are cool'));
-      expect(segments.last.startTime, 3);
+      expect(segments.last.startTime, 6);
     });
 
     test('generateScript falls back to deterministic beats without proxy',
@@ -42,7 +42,7 @@ void main() {
       );
 
       expect(script.isNotEmpty, isTrue);
-      expect(script.contains('0-3 s'), isTrue);
+      expect(script.contains('**0-6s:**'), isTrue);
       expect(script.toLowerCase().contains('dogs'), isTrue);
     });
   });

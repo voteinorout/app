@@ -63,7 +63,7 @@ class ScriptGenerator {
       final int end = min(length, segment.startTime + _fallbackBeatDurationSeconds);
       final String labelSuffix =
           segment.onScreenText.isNotEmpty ? ' ${segment.onScreenText}' : '';
-      buffer.writeln('${segment.startTime}-$end s:$labelSuffix');
+      buffer.writeln('${segment.startTime}-${end}s:$labelSuffix');
       buffer.writeln('Voiceover: ${segment.voiceover}');
       if (segment.visualsActions.isNotEmpty) {
         buffer.writeln('Visuals: ${segment.visualsActions}');
