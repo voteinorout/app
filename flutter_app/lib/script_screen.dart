@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 class ScriptScreen extends StatelessWidget {
   const ScriptScreen({super.key});
@@ -36,22 +37,48 @@ class ScriptScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                child: SelectableText(
-                  script.isEmpty
-                      ? 'Generate a script from the CONFIGURE tab to preview it here.'
-                      : script,
-                  style: theme.textTheme.bodyMedium,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  color: theme.colorScheme.surface.withValues(alpha: 0.35),
+                  child: script.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: Text(
+                              'Generate a script from the CONFIGURE tab to preview it here.',
+                              style: theme.textTheme.bodyMedium,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        )
+                      : Markdown(
+                          data: script,
+                          selectable: true,
+                          padding: const EdgeInsets.all(16),
+                          styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
+                            h1: theme.textTheme.titleMedium!
+                                .copyWith(fontWeight: FontWeight.w700),
+                            h2: theme.textTheme.titleSmall!
+                                .copyWith(fontWeight: FontWeight.w700),
+                            p: theme.textTheme.bodyMedium!
+                                .copyWith(height: 1.4),
+                            listBullet: theme.textTheme.bodyMedium!
+                                .copyWith(fontWeight: FontWeight.w600),
+                          ),
+                        ),
                 ),
               ),
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: script.isEmpty
-                  ? null
-                  : () => _copyToClipboard(context, script),
-              child: const Text('Copy script'),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: script.isEmpty
+                    ? null
+                    : () => _copyToClipboard(context, script),
+                child: const Text('Copy script'),
+              ),
             ),
           ],
         ),

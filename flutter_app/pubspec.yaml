@@ -15,6 +15,7 @@ dependencies:
   just_audio: ^0.10.5  # Playback for feeding audio into speech recognizer
   tflite_flutter: ^0.11.0  # Local LLM fallback inference
   flutter_svg: ^2.2.1  # Render SVG assets such as the splash logo
+  flutter_markdown: ^0.6.17  # Render formatted script output
   retry: ^3.1.2  # Retry utility for resilient HTTP calls
 
 dev_dependencies:
