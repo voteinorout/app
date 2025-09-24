@@ -19,10 +19,6 @@ const bool _eagerSpeechInit =
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  assert(
-    _scriptProxyEndpoint.isNotEmpty,
-    'SCRIPT_PROXY_ENDPOINT is missing. Run with --dart-define=SCRIPT_PROXY_ENDPOINT=https://<your-proxy>/api/generate-script.',
-  );
   if (_scriptProxyEndpoint.isEmpty && kDebugMode) {
     debugPrint(
       'SCRIPT_PROXY_ENDPOINT missing. Provide it via --dart-define to enable hosted script generation.',
