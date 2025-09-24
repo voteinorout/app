@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:vioo_app/services/remote/script_generator.dart';
 
 class ConfigScreen extends StatefulWidget {
@@ -75,6 +76,13 @@ class _ConfigScreenState extends State<ConfigScreen>
         _generatedScript = script.trim();
       });
 
+      final String? warning = ScriptGenerator.lastRunWarning;
+      if (warning != null && warning.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(warning)),
+        );
+      }
+
       _tabController.animateTo(1);
     } catch (e) {
       if (!mounted) {
@@ -88,6 +96,13 @@ class _ConfigScreenState extends State<ConfigScreen>
         setState(() => _isSubmitting = false);
       }
     }
+  }
+
+  void _copyScript(BuildContext context, String script) {
+    Clipboard.setData(ClipboardData(text: script));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Script copied to clipboard')),
+    );
   }
 
   @override
@@ -193,24 +208,51 @@ class _ConfigScreenState extends State<ConfigScreen>
             ),
           ),
           SafeArea(
-            child: _generatedScript == null
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Text(
-                        'Generate a script in the CONFIGURE tab to view it here.',
-                        style: theme.textTheme.bodyMedium,
-                        textAlign: TextAlign.center,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              child: _generatedScript == null
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Text(
+                          'Generate a script in the CONFIGURE tab to view it here.',
+                          style: theme.textTheme.bodyMedium,
+                          textAlign: TextAlign.center,
+                        ),
                       ),
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        Expanded(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surface.withValues(alpha: 0.35),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Scrollbar(
+                                thumbVisibility: true,
+                                child: SingleChildScrollView(
+                                  padding: const EdgeInsets.all(16),
+                                  child: SelectableText(
+                                    _generatedScript!,
+                                    style: theme.textTheme.bodyMedium,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () => _copyScript(context, _generatedScript!),
+                          child: const Text('Copy script'),
+                        ),
+                      ],
                     ),
-                  )
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.all(16.0),
-                    child: SelectableText(
-                      _generatedScript!,
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                  ),
+            ),
           ),
         ],
       ),

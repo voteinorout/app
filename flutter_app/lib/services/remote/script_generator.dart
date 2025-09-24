@@ -7,12 +7,22 @@ import 'package:vioo_app/services/ml/local_llm_service.dart';
 import 'package:vioo_app/services/openai_service.dart';
 
 class ScriptGenerator {
+  static const int _fallbackBeatDurationSeconds = 5;
+
+  static bool _lastRunUsedHosted = false;
+  static String? _lastRunWarning;
+
+  static bool get lastRunUsedHosted => _lastRunUsedHosted;
+
+  static String? get lastRunWarning => _lastRunWarning;
+
   static Future<String> generateScript(
     String topic,
     int length,
     String style, {
     String? cta,
   }) async {
+    _lastRunWarning = null;
     final String trimmedCta = (cta ?? '').trim();
 
     final String? remoteScript = await OpenAIService.generateJsonScript(
@@ -23,7 +33,13 @@ class ScriptGenerator {
     );
 
     if (remoteScript != null && remoteScript.trim().isNotEmpty) {
-      return remoteScript.trim();
+      _lastRunUsedHosted = true;
+      return _formatBeats(remoteScript.trim());
+    }
+
+    _lastRunUsedHosted = false;
+    if (kDebugMode) {
+      debugPrint('Remote script proxy unavailable; using on-device fallback generator.');
     }
 
     // Local fallback retains legacy JSON format which we convert to readable text.
@@ -36,26 +52,29 @@ class ScriptGenerator {
     );
 
     if (localSegments.isEmpty) {
-      return 'Unable to generate a script right now. Try again with a different prompt.';
+      _lastRunWarning = 'Script generator fallback returned no segments.';
+      return _formatBeats(
+        'Unable to generate a script right now. Try again with a different prompt.',
+      );
     }
 
     final StringBuffer buffer = StringBuffer();
     for (final ScriptSegment segment in localSegments) {
-      final int end = segment.startTime + 3;
-      buffer.writeln('${segment.startTime}-$end s');
+      final int end = min(length, segment.startTime + _fallbackBeatDurationSeconds);
+      buffer.writeln('${segment.startTime}-$end s:');
       buffer.writeln('Voiceover: ${segment.voiceover}');
-      if (segment.onScreenText.isNotEmpty) {
-        buffer.writeln('On-screen: ${segment.onScreenText}');
-      }
       if (segment.visualsActions.isNotEmpty) {
-        buffer.writeln('Visuals: ${segment.visualsActions}');
+        buffer.writeln('Visuals/Actions: ${segment.visualsActions}');
       }
       buffer.writeln();
     }
     if (trimmedCta.isNotEmpty) {
       buffer.writeln('Call to Action: $trimmedCta');
     }
-    return buffer.toString().trim();
+
+    _lastRunWarning =
+        LocalLlmService.lastError ?? 'Hosted script generation failed; using deterministic fallback.';
+    return _formatBeats(buffer.toString().trim());
   }
 
   static List<ScriptSegment> _parseSegments(String rawContent, int length) {
@@ -82,13 +101,14 @@ class ScriptGenerator {
       }
       final List<Map<String, dynamic>> typedSegments =
           segmentList.whereType<Map<String, dynamic>>().toList();
-      final int expectedSegments = max(1, (length / 3).ceil());
+      final int expectedSegments = max(1, (length / _fallbackBeatDurationSeconds).ceil());
 
       final List<ScriptSegment> scriptSegments = <ScriptSegment>[];
 
       for (int i = 0; i < typedSegments.length; i++) {
         final Map<String, dynamic> segment = typedSegments[i];
-        final int startTime = _coerceStartTime(segment['startTime'], i * 3);
+        final int startTime =
+            _coerceStartTime(segment['startTime'], i * _fallbackBeatDurationSeconds);
         final String voiceover = segment['voiceover']?.toString().trim() ?? '';
         final String onScreenText =
             segment['onScreenText']?.toString().trim() ?? '';
@@ -140,4 +160,27 @@ class ScriptGenerator {
     return fallback;
   }
 
+  static String _formatBeats(String script) {
+    final RegExp timeHeader =
+        RegExp(r'^(\s*)(\d+\s*-\s*\d+\s*(?:s|sec|seconds)?)\s*:(.*)');
+    final List<String> lines = script.split('\n');
+    final List<String> formatted = <String>[];
+    for (final String line in lines) {
+      final String trimmed = line.trimLeft();
+      if (trimmed.startsWith('**')) {
+        formatted.add(line);
+        continue;
+      }
+      final Match? match = timeHeader.firstMatch(line);
+      if (match != null) {
+        final String prefix = match.group(1) ?? '';
+        final String range = match.group(2)!;
+        final String rest = match.group(3) ?? '';
+        formatted.add('$prefix**$range:**$rest');
+      } else {
+        formatted.add(line);
+      }
+    }
+    return formatted.join('\n');
+  }
 }

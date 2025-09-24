@@ -52,19 +52,24 @@ class ScriptScreen extends StatelessWidget {
                             ),
                           ),
                         )
-                      : Markdown(
-                          data: script,
-                          selectable: true,
-                          padding: const EdgeInsets.all(16),
-                          styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
-                            h1: theme.textTheme.titleMedium!
-                                .copyWith(fontWeight: FontWeight.w700),
-                            h2: theme.textTheme.titleSmall!
-                                .copyWith(fontWeight: FontWeight.w700),
-                            p: theme.textTheme.bodyMedium!
-                                .copyWith(height: 1.4),
-                            listBullet: theme.textTheme.bodyMedium!
-                                .copyWith(fontWeight: FontWeight.w600),
+                      : Scrollbar(
+                          thumbVisibility: true,
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(16),
+                            child: MarkdownBody(
+                              data: script,
+                              selectable: true,
+                              styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
+                                h1: theme.textTheme.titleMedium!
+                                    .copyWith(fontWeight: FontWeight.w700),
+                                h2: theme.textTheme.titleSmall!
+                                    .copyWith(fontWeight: FontWeight.w700),
+                                p: theme.textTheme.bodyMedium!
+                                    .copyWith(height: 1.4),
+                                listBullet: theme.textTheme.bodyMedium!
+                                    .copyWith(fontWeight: FontWeight.w600),
+                              ),
+                            ),
                           ),
                         ),
                 ),
