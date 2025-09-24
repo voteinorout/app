@@ -58,4 +58,24 @@ class OpenAIService {
       );
 
       if (response.statusCode == 200) {
-        final dynamic data = jsonDecode(response.body
+        final dynamic data = jsonDecode(response.body);
+        if (data is Map<String, dynamic>) {
+          final dynamic script = data['text'] ?? data['script'];
+          if (script is String && script.trim().isNotEmpty) {
+            return script.trim();
+          }
+        } else if (data is String && data.trim().isNotEmpty) {
+          return data.trim();
+        }
+      } else if (kDebugMode) {
+        debugPrint('OpenAIService error: ${response.statusCode} - ${response.body}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('OpenAIService request failed: $e');
+      }
+    }
+
+    return null; // Fallback if needed
+  }
+}

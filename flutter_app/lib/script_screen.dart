@@ -2,8 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
-class ScriptScreen extends StatelessWidget {
+class ScriptScreen extends StatefulWidget {
   const ScriptScreen({super.key});
+
+  @override
+  State<ScriptScreen> createState() => _ScriptScreenState();
+}
+
+class _ScriptScreenState extends State<ScriptScreen> {
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,8 +72,11 @@ class ScriptScreen extends StatelessWidget {
                           ),
                         )
                       : Scrollbar(
+                          controller: _scrollController,
                           thumbVisibility: true,
                           child: SingleChildScrollView(
+                            controller: _scrollController,
+                            primary: false,
                             padding: const EdgeInsets.all(16),
                             child: MarkdownBody(
                               data: script,

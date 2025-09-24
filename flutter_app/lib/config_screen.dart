@@ -16,6 +16,7 @@ class _ConfigScreenState extends State<ConfigScreen>
   final TextEditingController _topicController = TextEditingController();
   final TextEditingController _lengthController =
       TextEditingController(text: '30');
+  late final ScrollController _scriptScrollController;
 
   late TabController _tabController;
   String _style = 'Educational';
@@ -26,6 +27,7 @@ class _ConfigScreenState extends State<ConfigScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _scriptScrollController = ScrollController();
   }
 
   @override
@@ -33,6 +35,7 @@ class _ConfigScreenState extends State<ConfigScreen>
     _ctaController.dispose();
     _topicController.dispose();
     _lengthController.dispose();
+    _scriptScrollController.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -233,8 +236,11 @@ class _ConfigScreenState extends State<ConfigScreen>
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(12),
                               child: Scrollbar(
+                                controller: _scriptScrollController,
                                 thumbVisibility: true,
                                 child: SingleChildScrollView(
+                                  controller: _scriptScrollController,
+                                  primary: false,
                                   padding: const EdgeInsets.all(16),
                                   child: SelectableText(
                                     _generatedScript!,
