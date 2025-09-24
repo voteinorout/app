@@ -111,30 +111,6 @@ class _ConfigScreenState extends State<ConfigScreen>
     );
   }
 
-  Future<void> _pasteIntoController(TextEditingController controller) async {
-    final ClipboardData? clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
-    final String? text = clipboardData?.text;
-    if (text == null || text.isEmpty) {
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Clipboard is empty.')),
-      );
-      return;
-    }
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      controller
-        ..text = text
-        ..selection = TextSelection.collapsed(offset: text.length);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -167,15 +143,10 @@ class _ConfigScreenState extends State<ConfigScreen>
                       keyboardType: TextInputType.multiline,
                       minLines: 3,
                       maxLines: 6,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         labelText: 'What’s the big idea?',
                         hintText:
                             'Share the key issue driving this campaign—whether it’s something personal, policy-focused, or a response to recent events.',
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.paste),
-                          tooltip: 'Paste from clipboard',
-                          onPressed: () => _pasteIntoController(_topicController),
-                        ),
                       ),
                       validator: (String? value) =>
                           (value == null || value.trim().isEmpty)
@@ -185,14 +156,9 @@ class _ConfigScreenState extends State<ConfigScreen>
                     const SizedBox(height: 20),
                     TextFormField(
                       controller: _ctaController,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         labelText: 'Final call to action (optional)',
                         hintText: 'Make a plan to vote at vote.org',
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.paste),
-                          tooltip: 'Paste from clipboard',
-                          onPressed: () => _pasteIntoController(_ctaController),
-                        ),
                       ),
                     ),
                     const SizedBox(height: 20),

@@ -11,9 +11,16 @@ export default async function handler(req, res) {
   const facts = Array.isArray(searchFacts)
     ? searchFacts.filter((fact) => typeof fact === 'string' && fact.trim().length > 0)
     : [];
+  const trimmedCta = typeof cta === 'string' ? cta.trim() : '';
   const factsInstruction = facts.length > 0
     ? `Weave in and lightly paraphrase these useful details if relevant: ${facts.join('; ')}.`
     : 'Ground each beat in believable, specific details without inventing statistics.';
+  const finalCtaVoiceover = trimmedCta
+    ? `Voiceover: <write 2-3 sentences, 25-35 words, resolving with an inspiring lead-in to the CTA: "${trimmedCta}">`
+    : 'Voiceover: <write 2-3 sentences, 25-35 words, resolving with an inspiring lead-in to a CTA you invent from the story (make it concrete and time-bound).>';
+  const ctaGuideline = trimmedCta
+    ? `- End with the provided CTA: "${trimmedCta}".`
+    : '- End with a CTA you invent that naturally follows the story—make it specific (e.g., text a friend, sign a pledge, volunteer) and never default to vague "learn more" language.';
   const prompt = `You are a campaign storyteller crafting a ${totalLength}-second video script about "${topic}" in a ${style || 'lighthearted and comedic'} tone.
 
 Break the script into time-stamped beats of roughly ${beatLength} seconds each using this exact layout and headings:
@@ -35,7 +42,7 @@ Voiceover: <write 2-3 sentences, 25-35 words, introducing a doubt or reality che
 Visuals: <describe dynamic supporting footage in one detailed sentence>
 
 ${beatLength * 4}-${totalLength}s: [payoff/CTA]
-Voiceover: <write 2-3 sentences, 25-35 words, resolving with an inspiring lead-in to the CTA: "${cta || 'Learn more at [website]'}" >
+${finalCtaVoiceover}
 Visuals: <describe dynamic supporting footage in one detailed sentence>
 
 Guidelines:
@@ -47,6 +54,7 @@ Guidelines:
 - ${factsInstruction}
 - Avoid repetitive phrasing (e.g., no overusing 'imagine' or similar terms).
 - Keep the tone ${style || 'lighthearted and comedic'}, fostering engagement without misleading claims.
+- ${ctaGuideline}
 
 Return only the formatted beats in plain text.`;
 

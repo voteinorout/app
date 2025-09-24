@@ -352,12 +352,15 @@ class LocalLlmService {
     );
     final List<ScriptSegment> segments =
         _parseSegments(rawJson, length);
-    if (cta != null && cta.trim().isNotEmpty && segments.isNotEmpty) {
+    if (segments.isNotEmpty) {
       final ScriptSegment last = segments.last;
+      final String trimmedCta = cta?.trim() ?? '';
+      final String appendedVoiceover = trimmedCta.isNotEmpty
+          ? '${last.voiceover} Your final push should invite the viewer to act right now: $trimmedCta.'
+          : '${last.voiceover} ${_craftInferredCtaSentence(topic)}';
       segments[segments.length - 1] = ScriptSegment(
         startTime: last.startTime,
-        voiceover:
-            '${last.voiceover} Your final push should invite the viewer to act right now: ${cta.trim()}.',
+        voiceover: appendedVoiceover.trim(),
         onScreenText: last.onScreenText,
         visualsActions: last.visualsActions,
       );
@@ -455,5 +458,14 @@ class LocalLlmService {
       }
     }
     return fallback;
+  }
+
+  static String _craftInferredCtaSentence(String topic) {
+    final String trimmed = topic.trim();
+    if (trimmed.isEmpty) {
+      return 'Give them a next step: share this with someone you trust and agree on one action to take today.';
+    }
+    final String lower = trimmed.toLowerCase();
+    return 'Give them a next step: share this with someone you trust and agree on one action to take today about $lower.';
   }
 }
