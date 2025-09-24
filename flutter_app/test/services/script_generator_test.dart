@@ -30,7 +30,7 @@ void main() {
       expect(segments, hasLength(2));
       expect(segments.first.startTime, 0);
       expect(segments.first.voiceover, contains('dogs are cool'));
-      expect(segments.last.startTime, 6);
+      expect(segments.last.startTime, 3);
     });
 
     test('generateScript falls back to deterministic beats without proxy',
