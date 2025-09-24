@@ -22,6 +22,7 @@ class _ConfigScreenState extends State<ConfigScreen>
   String _style = 'Educational';
   bool _isSubmitting = false;
   String? _generatedScript;
+  bool _usedHostedGenerator = true;
 
   @override
   void initState() {
@@ -61,6 +62,7 @@ class _ConfigScreenState extends State<ConfigScreen>
     setState(() {
       _isSubmitting = true;
       _generatedScript = null;
+      _usedHostedGenerator = true;
     });
 
     try {
@@ -77,6 +79,7 @@ class _ConfigScreenState extends State<ConfigScreen>
 
       setState(() {
         _generatedScript = script.trim();
+        _usedHostedGenerator = ScriptGenerator.lastRunUsedHosted;
       });
 
       final String? warning = ScriptGenerator.lastRunWarning;
@@ -252,6 +255,16 @@ class _ConfigScreenState extends State<ConfigScreen>
                           ),
                         ),
                         const SizedBox(height: 16),
+                        if (!_usedHostedGenerator) ...<Widget>[
+                          Text(
+                            'Local LLM Generator',
+                            style: theme.textTheme.bodySmall!.copyWith(
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
                         ElevatedButton(
                           onPressed: () => _copyScript(context, _generatedScript!),
                           child: const Text('Copy script'),

@@ -107,23 +107,35 @@ class LocalLlmService {
     required String style,
     required List<String> searchFacts,
   }) {
-    final String styleFragment =
-        (style.isEmpty || style == 'Other') ? 'any' : style.trim().toLowerCase();
+    final String tone = (style.isEmpty || style == 'Other')
+        ? 'lighthearted and comedic'
+        : style.trim();
     final StringBuffer buffer = StringBuffer()
-      ..writeln('Generate a viral video script for "$topic" in $styleFragment style, ')
-      ..writeln('length about $length seconds with beats every 5 seconds.')
-      ..writeln('Structure as timed beats: 0-5s: [hook], 5-10s: [next beat], etc.')
-      ..writeln('For each beat, include voiceover and visuals/actions only — never mention on-screen text or captions.')
-      ..writeln('End with a crisp CTA that fits the topic (e.g., learn more, try it out). Keep it engaging and relevant to the audience.');
+      ..writeln(
+        'You are a campaign storyteller crafting a $length-second video script about "$topic" in a ${tone.toLowerCase()} tone.',
+      )
+      ..writeln('Break the script into 6-second beats using this exact template:')
+      ..writeln('0-6s: [hook] — conversational question that sparks curiosity.')
+      ..writeln('Voiceover: 2-3 sentences, 25-35 words, and no bullet fragments.')
+      ..writeln('Visuals: One detailed sentence describing kinetic supporting footage.')
+      ..writeln('6-12s: [next beat] — escalate the idea with creative benefits.')
+      ..writeln('12-18s: [next beat] — heighten stakes with witty or unexpected scenario.')
+      ..writeln('18-24s: [twist] — introduce a doubt or reality check with humor.')
+      ..writeln(
+        '24-${length}s: [payoff/CTA] — resolve with an inspiring lead-in to the CTA.',
+      )
+      ..writeln('Never mention on-screen text or captions. Use sharp humor, puns, and fluid metaphors tailored to the topic.');
 
     if (searchFacts.isNotEmpty) {
-      buffer.writeln('\nOptionally paraphrase these facts:');
+      buffer.writeln('\nWeave in and paraphrase relevant details from:');
       for (final String fact in searchFacts) {
         buffer.writeln('- $fact');
       }
     }
 
-    buffer.writeln('Respond with plain text (no JSON, no extra notes).');
+    buffer
+      ..writeln('Avoid repeating the same opening words (for example, do not rely on "imagine" repeatedly).')
+      ..writeln('Return only the formatted beats in plain text, matching the template headings.');
 
     return buffer.toString();
   }
@@ -134,7 +146,7 @@ class LocalLlmService {
     required String style,
     required List<String> searchFacts,
   }) {
-    const int beatDuration = 5;
+    const int beatDuration = 6;
     final String toneDescriptor = (() {
       final String normalized = style.trim().toLowerCase();
       switch (normalized) {
@@ -214,7 +226,7 @@ class LocalLlmService {
       ];
       final List<String> midHooks = <String>[
         'Keep that $toneDescriptor rhythm pounding by showing how $topicDisplay collides with an ordinary moment.',
-        'Shift the angle so $topicDisplay hits like breaking news in someone’s notifications.',
+        'Shift the angle so $topicDisplay hits like breaking gossip in someone’s notifications.',
         'Reveal the twist people miss about $topicDisplay when they only skim the headline.',
       ];
       final List<String> lastHooks = <String>[
@@ -229,7 +241,7 @@ class LocalLlmService {
       final List<String> genericDetails = <String>[
         'Drop in a concrete, human-sized example that proves $topicDisplay isn’t abstract.',
         'Give them one vivid moment they can picture happening on their own block because of $topicDisplay.',
-        'Paint a fast scene that turns $topicDisplay into something they can feel.'
+        'Paint a fast scene that turns $topicDisplay into something they can feel.',
       ];
       final List<String> midClosers = <String>[
         'Challenge the viewer to picture what changes tonight if they stay with you.',
@@ -241,11 +253,20 @@ class LocalLlmService {
         'Spell out how their next decision becomes the turning point.',
       ];
 
+      final List<String> twistHooks = <String>[
+        'Lean into the doubt: what if $topicDisplay is more complicated than the headline admits?',
+        'Acknowledge the skeptic in the room and turn it into a $toneDescriptor punchline about $topicDisplay.',
+      ];
+      final List<String> twistClosers = <String>[
+        'Flip that hesitation into a reason the viewer needs to stay and see what comes next.',
+        'Answer the doubt with a believable scenario that still keeps the energy high.',
+      ];
+
       final String hook = isFirst
           ? firstHooks[index % firstHooks.length]
           : isLast
               ? lastHooks[index % lastHooks.length]
-              : midHooks[index % midHooks.length];
+              : (index == 3 ? twistHooks[index % twistHooks.length] : midHooks[index % midHooks.length]);
 
       final String detail = factPrompt.isEmpty
           ? genericDetails[index % genericDetails.length]
@@ -253,7 +274,7 @@ class LocalLlmService {
 
       final String closer = isLast
           ? finalClosers[index % finalClosers.length]
-          : midClosers[index % midClosers.length];
+          : (index == 3 ? twistClosers[index % twistClosers.length] : midClosers[index % midClosers.length]);
 
       return '$hook $detail $closer';
     }
@@ -302,10 +323,13 @@ class LocalLlmService {
         index: i,
       );
 
+      final List<String> labels = <String>['[hook]', '[next beat]', '[next beat]', '[twist]', '[payoff/CTA]'];
+      final String label = labels[min(i, labels.length - 1)];
+
       segments.add(<String, dynamic>{
         'startTime': start,
         'voiceover': voiceover,
-        'onScreenText': '',
+        'onScreenText': label,
         'visualsActions': visuals,
       });
     }
@@ -376,7 +400,7 @@ class LocalLlmService {
         return <ScriptSegment>[];
       }
 
-      const int beatDuration = 5;
+      const int beatDuration = 6;
       final List<Map<String, dynamic>> typedSegments =
           segmentList.whereType<Map<String, dynamic>>().toList();
       final int expectedSegments = max(1, (length / beatDuration).ceil());

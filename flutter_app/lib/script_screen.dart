@@ -35,6 +35,7 @@ class _ScriptScreenState extends State<ScriptScreen> {
     final String topic = args['topic'] as String? ?? 'Topic';
     final int length = args['length'] as int? ?? 30;
     final String style = args['style'] as String? ?? 'Any';
+    final bool usedHosted = args['usedHosted'] as bool? ?? true;
 
     return Scaffold(
       appBar: AppBar(title: const Text('3-Second Hooks')),
@@ -98,6 +99,16 @@ class _ScriptScreenState extends State<ScriptScreen> {
               ),
             ),
             const SizedBox(height: 16),
+            if (!usedHosted) ...<Widget>[
+              Text(
+                'Local LLM Generator',
+                style: theme.textTheme.bodySmall!.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(

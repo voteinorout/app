@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   }
 
   const { topic, length, style, cta, searchFacts } = req.body;
-  const beatLength = 5;
+  const beatLength = 6; // Changed to 6-second beats for beefier segments
   const totalLength = Number(length) || 30;
   const facts = Array.isArray(searchFacts)
     ? searchFacts.filter((fact) => typeof fact === 'string' && fact.trim().length > 0)
@@ -14,22 +14,39 @@ export default async function handler(req, res) {
   const factsInstruction = facts.length > 0
     ? `Weave in and lightly paraphrase these useful details if relevant: ${facts.join('; ')}.`
     : 'Ground each beat in believable, specific details without inventing statistics.';
-  const prompt = `You are a campaign storyteller crafting a ${totalLength}-second video script about "${topic}" in a ${style || 'any'} tone.
+  const prompt = `You are a campaign storyteller crafting a ${totalLength}-second video script about "${topic}" in a ${style || 'lighthearted and comedic'} tone.
 
 Break the script into time-stamped beats of roughly ${beatLength} seconds each using this exact layout and headings:
 
-0-${beatLength}s:
-Voiceover: <write 2-3 vivid sentences, 25-35 total words, that feel like a conversational hook>
-Visuals/Actions: <describe dynamic supporting footage in one detailed sentence>
+0-${beatLength}s: [hook]
+Voiceover: <write 2-3 vivid sentences, 25-35 words, that spark curiosity with a conversational question>
+Visuals: <describe dynamic supporting footage in one detailed sentence>
 
-Continue the pattern for the remaining beats (e.g., ${beatLength}-${beatLength * 2}s) until you cover the full ${totalLength}-second run time. Keep line breaks exactly as shown above. Do not create any other sections.
+${beatLength}-${beatLength * 2}s: [next beat]
+Voiceover: <write 2-3 sentences, 25-35 words, escalating the idea with creative benefits or scenarios>
+Visuals: <describe dynamic supporting footage in one detailed sentence>
+
+${beatLength * 2}-${beatLength * 3}s: [next beat]
+Voiceover: <write 2-3 sentences, 25-35 words, further escalating with witty or unexpected scenarios>
+Visuals: <describe dynamic supporting footage in one detailed sentence>
+
+${beatLength * 3}-${beatLength * 4}s: [twist]
+Voiceover: <write 2-3 sentences, 25-35 words, introducing a doubt or reality check with humor>
+Visuals: <describe dynamic supporting footage in one detailed sentence>
+
+${beatLength * 4}-${totalLength}s: [payoff/CTA]
+Voiceover: <write 2-3 sentences, 25-35 words, resolving with an inspiring lead-in to the CTA: "${cta || 'Learn more at [website]'}" >
+Visuals: <describe dynamic supporting footage in one detailed sentence>
 
 Guidelines:
+- Create a narrative arc: Start with a hook question, build through escalating creative ideas, add a twist (e.g., addressing a doubt), and end with a payoff/CTA.
+- Use sharp humor, puns, and fluid, non-repetitive metaphors tailored to the topic.
 - Voiceover must flow as complete sentences — no bullet fragments.
-- Visuals/Actions should suggest clear shots or actions that match the voiceover.
+- Visuals should suggest clear, vivid shots or actions that match the voiceover.
 - Never mention on-screen text or captions.
 - ${factsInstruction}
-- ${cta ? `End the final beat with a natural lead-in to the call to action: "${cta}".` : 'End with a motivating invitation that fits the topic.'}
+- Avoid repetitive phrasing (e.g., no overusing 'imagine' or similar terms).
+- Keep the tone ${style || 'lighthearted and comedic'}, fostering engagement without misleading claims.
 
 Return only the formatted beats in plain text.`;
 

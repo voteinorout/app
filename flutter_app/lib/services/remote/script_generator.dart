@@ -7,7 +7,7 @@ import 'package:vioo_app/services/ml/local_llm_service.dart';
 import 'package:vioo_app/services/openai_service.dart';
 
 class ScriptGenerator {
-  static const int _fallbackBeatDurationSeconds = 5;
+  static const int _fallbackBeatDurationSeconds = 6;
 
   static bool _lastRunUsedHosted = false;
   static String? _lastRunWarning;
@@ -61,10 +61,12 @@ class ScriptGenerator {
     final StringBuffer buffer = StringBuffer();
     for (final ScriptSegment segment in localSegments) {
       final int end = min(length, segment.startTime + _fallbackBeatDurationSeconds);
-      buffer.writeln('${segment.startTime}-$end s:');
+      final String labelSuffix =
+          segment.onScreenText.isNotEmpty ? ' ${segment.onScreenText}' : '';
+      buffer.writeln('${segment.startTime}-$end s:$labelSuffix');
       buffer.writeln('Voiceover: ${segment.voiceover}');
       if (segment.visualsActions.isNotEmpty) {
-        buffer.writeln('Visuals/Actions: ${segment.visualsActions}');
+        buffer.writeln('Visuals: ${segment.visualsActions}');
       }
       buffer.writeln();
     }
@@ -174,9 +176,10 @@ class ScriptGenerator {
       final Match? match = timeHeader.firstMatch(line);
       if (match != null) {
         final String prefix = match.group(1) ?? '';
-        final String range = match.group(2)!;
-        final String rest = match.group(3) ?? '';
-        formatted.add('$prefix**$range:**$rest');
+        final String range = match.group(2)!.replaceAll(RegExp(r'\s+'), ' ').trim();
+        final String rest = match.group(3)?.trimLeft() ?? '';
+        final String suffix = rest.isEmpty ? '' : ' $rest';
+        formatted.add('$prefix**$range:**$suffix');
       } else {
         formatted.add(line);
       }
