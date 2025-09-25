@@ -111,51 +111,54 @@ class LocalLlmService {
     final bool hasExplicitStyle =
         trimmedStyle.isNotEmpty && trimmedStyle.toLowerCase() != 'other';
     final String tone = hasExplicitStyle ? trimmedStyle : 'lighthearted and comedic';
+    const int beatLength = 4;
     final StringBuffer buffer = StringBuffer()
       ..writeln(
         'You are a campaign storyteller crafting a $length-second video script about "$topic" in a ${tone.toLowerCase()} tone.',
       )
       ..writeln()
-      ..writeln('**Break the script into time-stamped beats of roughly 4 seconds each using this exact layout and headings:**')
-      ..writeln()
-      ..writeln('**0-4s: [hook]**  ')
-      ..writeln('Voiceover: <write 2-3 vivid sentences, 25-35 words, that spark curiosity with a conversational question>  ')
-      ..writeln('Visuals: <describe dynamic supporting footage in one detailed sentence>')
-      ..writeln()
-      ..writeln('**4-8s: [next beat]**  ')
-      ..writeln('Voiceover: <write 2-3 sentences, 25-35 words, escalating the idea with creative benefits or scenarios>  ')
-      ..writeln('Visuals: <describe dynamic supporting footage in one detailed sentence>')
-      ..writeln()
-      ..writeln('**8-12s: [next beat]**  ')
-      ..writeln('Voiceover: <write 2-3 sentences, 25-35 words, further escalating with witty or unexpected scenarios>  ')
-      ..writeln('Visuals: <describe dynamic supporting footage in one detailed sentence>')
-      ..writeln()
-      ..writeln('**12-16s: [twist]**  ')
-      ..writeln('Voiceover: <write 2-3 sentences, 25-35 words, introducing a doubt or reality check with humor>  ')
-      ..writeln('Visuals: <describe dynamic supporting footage in one detailed sentence>')
-      ..writeln()
-      ..writeln('**16-${length}s: [payoff/CTA]**  ')
-      ..writeln('${tone.toLowerCase()} payoff: craft 2-3 sentences that resolve the story and lead into a CTA.  ')
-      ..writeln('Visuals: <describe dynamic supporting footage in one detailed sentence>')
-      ..writeln()
+      ..writeln('**Break the script into time-stamped beats of roughly $beatLength seconds each using this exact layout and headings:**')
+      ..writeln();
+
+    final List<String> headings = <String>['[hook]', '[next beat]', '[next beat]', '[twist]', '[payoff/CTA]'];
+    final List<String> voiceoverGuidance = <String>[
+      'Voiceover: <write 2-3 vivid sentences, 25-35 words, that spark curiosity with a conversational question>  ',
+      'Voiceover: <write 2-3 sentences, 25-35 words, escalating the idea with creative benefits or scenarios>  ',
+      'Voiceover: <write 2-3 sentences, 25-35 words, further escalating with witty or unexpected scenarios>  ',
+      'Voiceover: <write 2-3 sentences, 25-35 words, introducing a doubt or reality check with humor>  ',
+      'Voiceover: <write 2-3 sentences, 25-35 words, resolving with an inspiring lead-in to a CTA you invent or apply if provided. Make it concrete and time-bound.>  ',
+    ];
+
+    for (int i = 0; i < headings.length; i++) {
+      final int start = i * beatLength;
+      final int end = i == headings.length - 1
+          ? length
+          : min(length, (i + 1) * beatLength);
+      buffer
+        ..writeln('**$start-${end}s: ${headings[i]}**  ')
+        ..writeln(voiceoverGuidance[i])
+        ..writeln('Visuals: <describe dynamic supporting footage in one detailed sentence>')
+        ..writeln();
+    }
+
+    final String factsGuideline = searchFacts.isNotEmpty
+        ? 'Weave in and lightly paraphrase these useful details if relevant: ${searchFacts.join('; ')}.'
+        : 'Ground each beat in believable, specific details without inventing statistics.';
+
+    buffer
       ..writeln('**Guidelines:**  ')
-      ..writeln('- **Create a strong narrative arc: Start with a hook question that introduces the core conflict or excitement. Each subsequent beat must explicitly build on the previous one to keep the flow cohesive.**  ')
+      ..writeln('- **Create a strong narrative arc: Start with a hook question that introduces the core conflict or excitement. Each subsequent beat must explicitly build on the previous one (e.g., reference or escalate an idea from the prior beat) to ensure smooth, cohesive flow.**  ')
       ..writeln('- Use sharp humor, puns, and fluid, non-repetitive metaphors tailored to the topic.  ')
       ..writeln('- Voiceover must flow as complete sentences — no bullet fragments.  ')
       ..writeln('- Visuals should suggest clear, vivid shots or actions that match the voiceover.  ')
       ..writeln('- Never mention on-screen text or captions.  ')
-      ..writeln('- Avoid repeating the same opening words.  ')
+      ..writeln('- **${factsGuideline} Ensure all provided facts are woven in naturally across beats without omission, paraphrasing lightly for engagement but keeping key details intact.**  ')
+      ..writeln('- Avoid repetitive phrasing (e.g., no overusing "imagine").  ')
       ..writeln(hasExplicitStyle
-          ? '- Match the stated tone in every beat without drifting.  '
-          : '- Keep it quick, warm, and just mischievous enough to stay memorable.  ')
-      ..writeln('- Return only the formatted beats in plain text, matching the headings above.');
-
-    if (searchFacts.isNotEmpty) {
-      buffer.writeln('\n- Weave in and paraphrase relevant details from:');
-      for (final String fact in searchFacts) {
-        buffer.writeln('  - $fact');
-      }
-    }
+          ? '- Always make every line feel ${trimmedStyle.toLowerCase()}, keeping engagement high without misleading claims.  '
+          : '- Always keep it quick, warm, and a little mischievous without misleading claims.  ')
+      ..writeln('- **In the payoff/CTA beat, fully incorporate every detail from the CTA you use or invent, paraphrasing it into 2-3 inspiring, action-oriented sentences (25-35 words total). Do not omit specifics like names, actions, or tags.**  ')
+      ..writeln('\nReturn only the formatted beats in plain text.');
 
     return buffer.toString();
   }

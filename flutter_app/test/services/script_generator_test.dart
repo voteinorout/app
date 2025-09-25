@@ -25,7 +25,7 @@ void main() {
       ''';
 
       final List<ScriptSegment> segments =
-          ScriptGenerator.parseSegmentsForTest(rawJson, 12);
+          ScriptGenerator.parseSegmentsForTest(rawJson, 8);
 
       expect(segments, hasLength(2));
       expect(segments.first.startTime, 0);

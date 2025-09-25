@@ -91,11 +91,31 @@ class _ScriptScreenState extends State<ScriptScreen> {
                                     .copyWith(height: 1.4),
                                 listBullet: theme.textTheme.bodyMedium!
                                     .copyWith(fontWeight: FontWeight.w600),
+                                strong: theme.textTheme.bodyMedium!
+                                    .copyWith(fontWeight: FontWeight.w700),
+                                blockquote: theme.textTheme.bodySmall!
+                                    .copyWith(
+                                  color: theme.colorScheme.onSurface
+                                      .withOpacity(0.6),
+                                  height: 1.4,
+                                ),
+                                blockquotePadding:
+                                    const EdgeInsets.symmetric(horizontal: 12)
+                                        .copyWith(top: 4, bottom: 4),
+                                blockquoteDecoration: BoxDecoration(
+                                  border: Border(
+                                    left: BorderSide(
+                                      color: theme.colorScheme.onSurface
+                                          .withOpacity(0.12),
+                                      width: 2,
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                ),
+              ),
               ),
             ),
             const SizedBox(height: 16),
@@ -114,7 +134,7 @@ class _ScriptScreenState extends State<ScriptScreen> {
               child: ElevatedButton(
                 onPressed: script.isEmpty
                     ? null
-                    : () => _copyToClipboard(context, script),
+                : () => _copyToClipboard(context, script),
                 child: const Text('Copy script'),
               ),
             ),

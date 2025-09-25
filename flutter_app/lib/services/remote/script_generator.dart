@@ -61,9 +61,7 @@ class ScriptGenerator {
     final StringBuffer buffer = StringBuffer();
     for (final ScriptSegment segment in localSegments) {
       final int end = min(length, segment.startTime + _fallbackBeatDurationSeconds);
-      final String labelSuffix =
-          segment.onScreenText.isNotEmpty ? ' ${segment.onScreenText}' : '';
-      buffer.writeln('${segment.startTime}-${end}s:$labelSuffix');
+      buffer.writeln('${segment.startTime}-${end}s:');
       buffer.writeln('Voiceover: ${segment.voiceover}');
       if (segment.visualsActions.isNotEmpty) {
         buffer.writeln('Visuals: ${segment.visualsActions}');
@@ -176,14 +174,23 @@ class ScriptGenerator {
       final Match? match = timeHeader.firstMatch(line);
       if (match != null) {
         final String prefix = match.group(1) ?? '';
-        final String range = match.group(2)!.replaceAll(RegExp(r'\s+'), ' ').trim();
+        final String range = match.group(2)!
+            .replaceAll(RegExp(r'\s+'), ' ')
+            .replaceAll(' ', '')
+            .replaceAll('sec', 's');
         final String rest = match.group(3)?.trimLeft() ?? '';
-        final String suffix = rest.isEmpty ? '' : ' $rest';
+        final String cleanedRest = rest.replaceFirst(RegExp(r'^\[[^\]]+\]\s*'), '');
+        final String suffix = cleanedRest.isEmpty ? '' : ' $cleanedRest';
         formatted.add('$prefix**$range:**$suffix');
       } else {
         formatted.add(line);
       }
     }
-    return formatted.join('\n');
+    String formattedScript = formatted.join('\n');
+    formattedScript = formattedScript.replaceAllMapped(
+      RegExp(r'(^|\n)Visuals:\s*(.*)'),
+      (Match m) => '${m.group(1)}> *Visuals:* ${m.group(2)}',
+    );
+    return formattedScript;
   }
 }

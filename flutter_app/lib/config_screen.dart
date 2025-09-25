@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:vioo_app/services/remote/script_generator.dart';
 
 class ConfigScreen extends StatefulWidget {
@@ -245,9 +246,31 @@ class _ConfigScreenState extends State<ConfigScreen>
                                   controller: _scriptScrollController,
                                   primary: false,
                                   padding: const EdgeInsets.all(16),
-                                  child: SelectableText(
-                                    _generatedScript!,
-                                    style: theme.textTheme.bodyMedium,
+                                  child: MarkdownBody(
+                                    data: _generatedScript!,
+                                    selectable: true,
+                                    styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
+                                      p: theme.textTheme.bodyMedium!
+                                          .copyWith(height: 1.4),
+                                      strong: theme.textTheme.bodyMedium!
+                                          .copyWith(fontWeight: FontWeight.w700),
+                                      blockquote: theme.textTheme.bodySmall!
+                                          .copyWith(
+                                        color: theme.colorScheme.onSurface
+                                            .withOpacity(0.6),
+                                        height: 1.4,
+                                      ),
+                                      blockquotePadding:
+                                          const EdgeInsets.symmetric(horizontal: 12)
+                                              .copyWith(top: 4, bottom: 4),
+                                      blockquoteDecoration: BoxDecoration(
+                                        border: Border( left: BorderSide(
+                                          color: theme.colorScheme.onSurface
+                                              .withOpacity(0.12),
+                                          width: 2,
+                                        )),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
