@@ -7,7 +7,7 @@ import 'package:vioo_app/services/ml/local_llm_service.dart';
 import 'package:vioo_app/services/openai_service.dart';
 
 class ScriptGenerator {
-  static const int _fallbackBeatDurationSeconds = 6;
+  static const int _fallbackBeatDurationSeconds = 4;
 
   static bool _lastRunUsedHosted = false;
   static String? _lastRunWarning;

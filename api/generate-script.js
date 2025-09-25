@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   }
 
   const { topic, length, style, cta, searchFacts } = req.body;
-  const beatLength = 6; // Changed to 6-second beats for beefier segments
+  const beatLength = 4; // Four-second pacing keeps beats punchy
   const totalLength = Number(length) || 30;
   const facts = Array.isArray(searchFacts)
     ? searchFacts.filter((fact) => typeof fact === 'string' && fact.trim().length > 0)
@@ -28,38 +28,38 @@ export default async function handler(req, res) {
     : '- End with a CTA you invent that naturally follows the story—make it specific (e.g., text a friend, sign a pledge, volunteer) and never default to vague "learn more" language.';
   const prompt = `You are a campaign storyteller crafting a ${totalLength}-second video script about "${topic}" in a ${styleDisplay} tone.
 
-Break the script into time-stamped beats of roughly ${beatLength} seconds each using this exact layout and headings:
+**Break the script into time-stamped beats of roughly ${beatLength} seconds each using this exact layout and headings:**
 
-0-${beatLength}s: [hook]
-Voiceover: <write 2-3 vivid sentences, 25-35 words, that spark curiosity with a conversational question>
+**0-${beatLength}s: [hook]**  
+Voiceover: <write 2-3 vivid sentences, 25-35 words, that spark curiosity with a conversational question>  
 Visuals: <describe dynamic supporting footage in one detailed sentence>
 
-${beatLength}-${beatLength * 2}s: [next beat]
-Voiceover: <write 2-3 sentences, 25-35 words, escalating the idea with creative benefits or scenarios>
+**${beatLength}-${beatLength * 2}s: [next beat]**  
+Voiceover: <write 2-3 sentences, 25-35 words, escalating the idea with creative benefits or scenarios>  
 Visuals: <describe dynamic supporting footage in one detailed sentence>
 
-${beatLength * 2}-${beatLength * 3}s: [next beat]
-Voiceover: <write 2-3 sentences, 25-35 words, further escalating with witty or unexpected scenarios>
+**${beatLength * 2}-${beatLength * 3}s: [next beat]**  
+Voiceover: <write 2-3 sentences, 25-35 words, further escalating with witty or unexpected scenarios>  
 Visuals: <describe dynamic supporting footage in one detailed sentence>
 
-${beatLength * 3}-${beatLength * 4}s: [twist]
-Voiceover: <write 2-3 sentences, 25-35 words, introducing a doubt or reality check with humor>
+**${beatLength * 3}-${beatLength * 4}s: [twist]**  
+Voiceover: <write 2-3 sentences, 25-35 words, introducing a doubt or reality check with humor>  
 Visuals: <describe dynamic supporting footage in one detailed sentence>
 
-${beatLength * 4}-${totalLength}s: [payoff/CTA]
-${finalCtaVoiceover}
+**${beatLength * 4}-${totalLength}s: [payoff/CTA]**  
+${finalCtaVoiceover}  
 Visuals: <describe dynamic supporting footage in one detailed sentence>
 
-Guidelines:
-- Create a narrative arc: Start with a hook question, build through escalating creative ideas, add a twist (e.g., addressing a doubt), and end with a payoff/CTA.
-- Use sharp humor, puns, and fluid, non-repetitive metaphors tailored to the topic.
-- Voiceover must flow as complete sentences — no bullet fragments.
-- Visuals should suggest clear, vivid shots or actions that match the voiceover.
-- Never mention on-screen text or captions.
-- ${factsInstruction}
-- Avoid repetitive phrasing (e.g., no overusing 'imagine' or similar terms).
-- Always ${styleDirective}, keeping engagement high without misleading claims.
-- ${ctaGuideline}
+**Guidelines:**  
+- **Create a strong narrative arc: Start with a hook question that introduces the core conflict or excitement. Each subsequent beat must explicitly build on the previous one (e.g., reference or escalate an idea from the prior beat) to ensure smooth, cohesive flow—like a story unfolding chapter by chapter. Avoid jumps; make the script read as one continuous narrative when combined.**  
+- Use sharp humor, puns, and fluid, non-repetitive metaphors tailored to the topic.  
+- Voiceover must flow as complete sentences — no bullet fragments.  
+- Visuals should suggest clear, vivid shots or actions that match the voiceover.  
+- Never mention on-screen text or captions.  
+- **${factsInstruction} Ensure all provided facts are woven in naturally across beats without omission, paraphrasing lightly for engagement but keeping key details intact (e.g., numbers, names, events).**  
+- Avoid repetitive phrasing (e.g., no overusing 'imagine' or similar terms).  
+- Always ${styleDirective}, keeping engagement high without misleading claims.  
+- **${ctaGuideline} In the payoff/CTA beat, fully incorporate every detail from the provided CTA by paraphrasing it into 2-3 inspiring, action-oriented sentences (25-35 words total). Do not generalize or omit specifics like names, actions, or tags—integrate them seamlessly for a concrete, urgent call to action.**  
 
 Return only the formatted beats in plain text.`;
 

@@ -14,7 +14,7 @@ void main() {
     );
 
     expect(script, isNotEmpty);
-    expect(script.contains('**0-6s:**'), isTrue);
+    expect(script.contains('**0-4s:**'), isTrue);
     expect(script.toLowerCase().contains('dogs'), isTrue);
   });
 }

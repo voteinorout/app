@@ -115,31 +115,47 @@ class LocalLlmService {
       ..writeln(
         'You are a campaign storyteller crafting a $length-second video script about "$topic" in a ${tone.toLowerCase()} tone.',
       )
-      ..writeln('Break the script into 6-second beats using this exact template:')
-      ..writeln('0-6s: [hook] — conversational question that sparks curiosity.')
-      ..writeln('Voiceover: 2-3 sentences, 25-35 words, and no bullet fragments.')
-      ..writeln('Visuals: One detailed sentence describing kinetic supporting footage.')
-      ..writeln('6-12s: [next beat] — escalate the idea with creative benefits.')
-      ..writeln('12-18s: [next beat] — heighten stakes with witty or unexpected scenario.')
-      ..writeln('18-24s: [twist] — introduce a doubt or reality check with humor.')
-      ..writeln(
-        '24-${length}s: [payoff/CTA] — resolve with an inspiring lead-in to the CTA.',
-      )
-      ..writeln('Never mention on-screen text or captions. Use sharp humor, puns, and fluid metaphors tailored to the topic.')
+      ..writeln()
+      ..writeln('**Break the script into time-stamped beats of roughly 4 seconds each using this exact layout and headings:**')
+      ..writeln()
+      ..writeln('**0-4s: [hook]**  ')
+      ..writeln('Voiceover: <write 2-3 vivid sentences, 25-35 words, that spark curiosity with a conversational question>  ')
+      ..writeln('Visuals: <describe dynamic supporting footage in one detailed sentence>')
+      ..writeln()
+      ..writeln('**4-8s: [next beat]**  ')
+      ..writeln('Voiceover: <write 2-3 sentences, 25-35 words, escalating the idea with creative benefits or scenarios>  ')
+      ..writeln('Visuals: <describe dynamic supporting footage in one detailed sentence>')
+      ..writeln()
+      ..writeln('**8-12s: [next beat]**  ')
+      ..writeln('Voiceover: <write 2-3 sentences, 25-35 words, further escalating with witty or unexpected scenarios>  ')
+      ..writeln('Visuals: <describe dynamic supporting footage in one detailed sentence>')
+      ..writeln()
+      ..writeln('**12-16s: [twist]**  ')
+      ..writeln('Voiceover: <write 2-3 sentences, 25-35 words, introducing a doubt or reality check with humor>  ')
+      ..writeln('Visuals: <describe dynamic supporting footage in one detailed sentence>')
+      ..writeln()
+      ..writeln('**16-${length}s: [payoff/CTA]**  ')
+      ..writeln('${tone.toLowerCase()} payoff: craft 2-3 sentences that resolve the story and lead into a CTA.  ')
+      ..writeln('Visuals: <describe dynamic supporting footage in one detailed sentence>')
+      ..writeln()
+      ..writeln('**Guidelines:**  ')
+      ..writeln('- **Create a strong narrative arc: Start with a hook question that introduces the core conflict or excitement. Each subsequent beat must explicitly build on the previous one to keep the flow cohesive.**  ')
+      ..writeln('- Use sharp humor, puns, and fluid, non-repetitive metaphors tailored to the topic.  ')
+      ..writeln('- Voiceover must flow as complete sentences — no bullet fragments.  ')
+      ..writeln('- Visuals should suggest clear, vivid shots or actions that match the voiceover.  ')
+      ..writeln('- Never mention on-screen text or captions.  ')
+      ..writeln('- Avoid repeating the same opening words.  ')
       ..writeln(hasExplicitStyle
-          ? 'Match that tone in every beat without drifting.'
-          : 'Keep it quick, warm, and just mischievous enough to stay memorable.');
+          ? '- Match the stated tone in every beat without drifting.  '
+          : '- Keep it quick, warm, and just mischievous enough to stay memorable.  ')
+      ..writeln('- Return only the formatted beats in plain text, matching the headings above.');
 
     if (searchFacts.isNotEmpty) {
-      buffer.writeln('\nWeave in and paraphrase relevant details from:');
+      buffer.writeln('\n- Weave in and paraphrase relevant details from:');
       for (final String fact in searchFacts) {
-        buffer.writeln('- $fact');
+        buffer.writeln('  - $fact');
       }
     }
-
-    buffer
-      ..writeln('Avoid repeating the same opening words (for example, do not rely on "imagine" repeatedly).')
-      ..writeln('Return only the formatted beats in plain text, matching the template headings.');
 
     return buffer.toString();
   }
@@ -150,7 +166,7 @@ class LocalLlmService {
     required String style,
     required List<String> searchFacts,
   }) {
-    const int beatDuration = 6;
+    const int beatDuration = 4;
     final String toneDescriptor = (() {
       final String normalized = style.trim().toLowerCase();
       switch (normalized) {
@@ -407,7 +423,7 @@ class LocalLlmService {
         return <ScriptSegment>[];
       }
 
-      const int beatDuration = 6;
+      const int beatDuration = 4;
       final List<Map<String, dynamic>> typedSegments =
           segmentList.whereType<Map<String, dynamic>>().toList();
       final int expectedSegments = max(1, (length / beatDuration).ceil());
