@@ -117,7 +117,7 @@ class LocalLlmService {
         'You are a campaign storyteller crafting a $length-second video script about "$topic" in a ${tone.toLowerCase()} tone.',
       )
       ..writeln()
-      ..writeln('**Break the script into time-stamped beats of roughly $beatLength seconds. Start at 0-$beatLength s and keep adding beats (e.g., ${beatLength}-${beatLength * 2}s, ${beatLength * 2}-${beatLength * 3}s, …) until you hit $length s with no gaps. Shorten the final beat if that helps land exactly on $length s.**')
+      ..writeln('**Break the script into time-stamped beats of roughly $beatLength seconds. Start at 0-$beatLength s, then add $beatLength-second segments (e.g., ${beatLength}-${beatLength * 2}s, ${beatLength * 2}-${beatLength * 3}s, …) until you reach $length s with no gaps. If the final segment would overshoot, create a last beat that ends exactly at $length s (e.g., 88-90s). Do not merge multiple segments into one beat.**')
       ..writeln()
       ..writeln('For every beat, follow this structure:')
       ..writeln()
@@ -125,7 +125,7 @@ class LocalLlmService {
       ..writeln('Voiceover: <2-3 sentences, 25-35 words, propelling the story forward>  ')
       ..writeln('Visuals: <one detailed sentence suggesting dynamic supporting footage>  ')
       ..writeln()
-      ..writeln('- The first beat must hook the viewer with a provocative question or setup.')
+      ..writeln('- The opening beat must hook the viewer with a provocative question or setup.')
       ..writeln('- Middle beats must escalate the idea, explicitly referencing earlier beats so the story feels continuous. Introduce a twist/doubt once you pass the midpoint.')
       ..writeln('- The final beat resolves the story and delivers the CTA.');
 
