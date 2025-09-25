@@ -117,8 +117,17 @@ class LocalLlmService {
         'You are a campaign storyteller crafting a $length-second video script about "$topic" in a ${tone.toLowerCase()} tone.',
       )
       ..writeln()
-      ..writeln('**Break the script into time-stamped beats of roughly $beatLength seconds each using this exact layout and headings:**')
-      ..writeln();
+      ..writeln('**Break the script into time-stamped beats of roughly $beatLength seconds. Start at 0-$beatLength s and keep adding beats (e.g., ${beatLength}-${beatLength * 2}s, ${beatLength * 2}-${beatLength * 3}s, …) until you hit $length s with no gaps. Shorten the final beat if that helps land exactly on $length s.**')
+      ..writeln()
+      ..writeln('For every beat, follow this structure:')
+      ..writeln()
+      ..writeln('**start-end s:**  ')
+      ..writeln('Voiceover: <2-3 sentences, 25-35 words, propelling the story forward>  ')
+      ..writeln('Visuals: <one detailed sentence suggesting dynamic supporting footage>  ')
+      ..writeln()
+      ..writeln('- The first beat must hook the viewer with a provocative question or setup.')
+      ..writeln('- Middle beats must escalate the idea, explicitly referencing earlier beats so the story feels continuous. Introduce a twist/doubt once you pass the midpoint.')
+      ..writeln('- The final beat resolves the story and delivers the CTA.');
 
     final List<String> headings = <String>['[hook]', '[next beat]', '[next beat]', '[twist]', '[payoff/CTA]'];
     final List<String> voiceoverGuidance = <String>[
@@ -140,8 +149,8 @@ class LocalLlmService {
       buffer
         ..writeln('**$start-${end}s: $heading**  ')
         ..writeln(guidance)
-        ..writeln('Visuals: <describe dynamic supporting footage in one detailed sentence>')
-        ..writeln();
+      ..writeln('Visuals: <describe dynamic supporting footage in one detailed sentence>')
+      ..writeln();
     }
 
     final String factsGuideline = searchFacts.isNotEmpty
@@ -150,7 +159,7 @@ class LocalLlmService {
 
     buffer
       ..writeln('**Guidelines:**  ')
-      ..writeln('- **Create a strong narrative arc: Start with a hook question that introduces the core conflict or excitement. Each subsequent beat must explicitly build on the previous one (e.g., reference or escalate an idea from the prior beat) to ensure smooth, cohesive flow.**  ')
+      ..writeln('- **Create a strong narrative arc: Start with a hook question that introduces the core conflict or excitement. Each subsequent beat must explicitly build on the previous one (reference or escalate prior ideas) so the story reads as one continuous narrative when combined.**  ')
       ..writeln('- Use sharp humor, puns, and fluid, non-repetitive metaphors tailored to the topic.  ')
       ..writeln('- Voiceover must flow as complete sentences — no bullet fragments.  ')
       ..writeln('- Visuals should suggest clear, vivid shots or actions that match the voiceover.  ')

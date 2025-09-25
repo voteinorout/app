@@ -28,27 +28,17 @@ export default async function handler(req, res) {
     : '- End with a CTA you invent that naturally follows the story—make it specific (e.g., text a friend, sign a pledge, volunteer) and never default to vague "learn more" language.';
   const prompt = `You are a campaign storyteller crafting a ${totalLength}-second video script about "${topic}" in a ${styleDisplay} tone.
 
-**Break the script into time-stamped beats of roughly ${beatLength} seconds each using this exact layout and headings:**
+**Break the script into time-stamped beats of roughly ${beatLength} seconds. Start at 0-${beatLength}s and keep adding beats (e.g., ${beatLength}-${beatLength * 2}s, ${beatLength * 2}-${beatLength * 3}s, …) until you reach ${totalLength}s with no gaps. The final beat should end exactly at ${totalLength}s (shorten the last beat if needed).**
 
-**0-${beatLength}s: [hook]**  
-Voiceover: <write 2-3 vivid sentences, 25-35 words, that spark curiosity with a conversational question>  
-Visuals: <describe dynamic supporting footage in one detailed sentence>
+For every beat you write, use this format:
 
-**${beatLength}-${beatLength * 2}s: [next beat]**  
-Voiceover: <write 2-3 sentences, 25-35 words, escalating the idea with creative benefits or scenarios>  
-Visuals: <describe dynamic supporting footage in one detailed sentence>
+**start-end s:**  
+Voiceover: <2-3 sentences, 25-35 words, driving the story forward>  
+Visuals: <one detailed sentence suggesting dynamic supporting footage>
 
-**${beatLength * 2}-${beatLength * 3}s: [next beat]**  
-Voiceover: <write 2-3 sentences, 25-35 words, further escalating with witty or unexpected scenarios>  
-Visuals: <describe dynamic supporting footage in one detailed sentence>
-
-**${beatLength * 3}-${beatLength * 4}s: [twist]**  
-Voiceover: <write 2-3 sentences, 25-35 words, introducing a doubt or reality check with humor>  
-Visuals: <describe dynamic supporting footage in one detailed sentence>
-
-**${beatLength * 4}-${totalLength}s: [payoff/CTA]**  
-${finalCtaVoiceover}  
-Visuals: <describe dynamic supporting footage in one detailed sentence>
+- The first beat must hook the viewer with a provocative question or statement.  
+- The middle beats must escalate the idea, referencing prior beats so the story feels continuous. Introduce a twist or doubt once you pass the midpoint.  
+- The final beat delivers the payoff/CTA.
 
 **Guidelines:**  
 - **Create a strong narrative arc: Start with a hook question that introduces the core conflict or excitement. Each subsequent beat must explicitly build on the previous one (e.g., reference or escalate an idea from the prior beat) to ensure smooth, cohesive flow—like a story unfolding chapter by chapter. Avoid jumps; make the script read as one continuous narrative when combined.**  
