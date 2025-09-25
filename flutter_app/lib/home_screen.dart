@@ -133,6 +133,17 @@ class HomeScreen extends StatelessWidget {
                 cta: 'Try transcription',
                 onPressed: () => Navigator.pushNamed(context, '/transcription'),
               ),
+              const SizedBox(height: 24),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'version 1.2.3',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.4),
+                    letterSpacing: 0.4,
+                  ),
+                ),
+              ),
             ],
           ),
         ),
