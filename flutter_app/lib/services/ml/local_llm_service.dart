@@ -129,14 +129,17 @@ class LocalLlmService {
       'Voiceover: <write 2-3 sentences, 25-35 words, resolving with an inspiring lead-in to a CTA you invent or apply if provided. Make it concrete and time-bound.>  ',
     ];
 
-    for (int i = 0; i < headings.length; i++) {
+    final int beatCount = max(1, (length / beatLength).ceil());
+    for (int i = 0; i < beatCount; i++) {
       final int start = i * beatLength;
-      final int end = i == headings.length - 1
+      final int end = i == beatCount - 1
           ? length
           : min(length, (i + 1) * beatLength);
+      final String heading = headings[min(i, headings.length - 1)];
+      final String guidance = voiceoverGuidance[min(i, voiceoverGuidance.length - 1)];
       buffer
-        ..writeln('**$start-${end}s: ${headings[i]}**  ')
-        ..writeln(voiceoverGuidance[i])
+        ..writeln('**$start-${end}s: $heading**  ')
+        ..writeln(guidance)
         ..writeln('Visuals: <describe dynamic supporting footage in one detailed sentence>')
         ..writeln();
     }
