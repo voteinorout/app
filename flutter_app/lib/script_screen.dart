@@ -38,7 +38,7 @@ class _ScriptScreenState extends State<ScriptScreen> {
     final bool usedHosted = args['usedHosted'] as bool? ?? true;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('3-Second Hooks')),
+      appBar: AppBar(title: const Text('Viral Script Generator')),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         child: Column(

@@ -21,7 +21,7 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
 
-    expect(find.text('3-Second Hooks'), findsWidgets);
+    expect(find.text('Viral Script Generator'), findsWidgets);
     expect(find.text('Create a script'), findsWidgets);
   });
 }

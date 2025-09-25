@@ -118,7 +118,7 @@ class _ConfigScreenState extends State<ConfigScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('3-Second Hooks'),
+        title: const Text('Viral Script Generator'),
         bottom: TabBar(
           controller: _tabController,
           tabs: const <Widget>[

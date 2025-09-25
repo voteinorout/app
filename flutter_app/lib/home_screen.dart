@@ -84,7 +84,7 @@ class HomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '3-Second Hooks',
+                'Viral Script Generator',
                 style: theme.textTheme.headlineSmall!
                     .copyWith(fontWeight: FontWeight.w700),
               ),
@@ -100,9 +100,9 @@ class HomeScreen extends StatelessWidget {
               _featureCard(
                 context,
                 icon: Icons.bolt,
-                title: '3-Second Hooks',
+                title: 'Viral Script Generator',
                 description:
-                    'Generate scroll-stopping hooks with clear on-screen cues every three seconds.',
+                    'Generate scroll-stopping scripts with timed beats and share-ready visuals.',
                 cta: 'Create a script',
                 onPressed: () => Navigator.pushNamed(context, '/config'),
               ),
