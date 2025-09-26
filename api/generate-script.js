@@ -19,8 +19,8 @@ export default async function handler(req, res) {
     ? 'keep it quick, warm, and a little mischievous'
     : `make every line feel ${rawStyle.toLowerCase()}`;
   const factsInstruction = facts.length > 0
-    ? `Weave in and lightly paraphrase these useful details if relevant: ${facts.join('; ')}.`
-    : 'Ground each beat in believable, specific details without inventing statistics.';
+    ? `Weave in every one of these details across the beats. Do not omit names, numbers, dates, or concrete actions: ${facts.join('; ')}. Paraphrase lightly only to keep the flow.`
+    : 'Ground each beat in believable, specific, verifiable details without inventing statistics.';
   const finalCtaVoiceover = trimmedCta
     ? `Voiceover: <write 2-3 sentences, 25-35 words, resolving with an inspiring lead-in to the CTA: "${trimmedCta}">`
     : 'Voiceover: <write 2-3 sentences, 25-35 words, resolving with an inspiring lead-in to a CTA you invent from the story (make it concrete and time-bound).>';
@@ -47,7 +47,7 @@ Visuals: <one detailed sentence suggesting dynamic supporting footage>
 - Voiceover must flow as complete sentences — no bullet fragments.  
 - Visuals should suggest clear, vivid shots or actions that match the voiceover.  
 - Never mention on-screen text or captions.  
-- **${factsInstruction} Ensure all provided facts are woven in naturally across beats without omission, paraphrasing lightly for engagement but keeping key details intact (e.g., numbers, names, events).**  
+- **${factsInstruction}**  
 - Avoid repetitive phrasing (e.g., no overusing 'imagine' or similar terms).  
 - Always ${styleDirective}, keeping engagement high without misleading claims.  
 - **${ctaGuideline} In the payoff/CTA beat, fully incorporate every detail from the provided CTA by paraphrasing it into 2-3 inspiring, action-oriented sentences (25-35 words total). Do not generalize or omit specifics like names, actions, or tags—integrate them seamlessly for a concrete, urgent call to action.**  

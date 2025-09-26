@@ -139,7 +139,7 @@ class HomeScreen extends StatelessWidget {
               Align(
                 alignment: Alignment.center,
                 child: Text(
-                  'version 1.2.8',
+                  'version 1.2.9',
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onSurface.withOpacity(0.4),
                     letterSpacing: 0.4,

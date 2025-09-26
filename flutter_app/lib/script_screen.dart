@@ -119,25 +119,28 @@ class _ScriptScreenState extends State<ScriptScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            if (!usedHosted) ...<Widget>[
-              Text(
-                'Local LLM Generator',
-                style: theme.textTheme.bodySmall!.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: script.isEmpty
                     ? null
-                : () => _copyToClipboard(context, script),
+                    : () => _copyToClipboard(context, script),
                 child: const Text('Copy script'),
               ),
             ),
+            if (!usedHosted) ...<Widget>[
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.center,
+                child: Text(
+                  'Fallback script',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withOpacity(0.5),
+                    letterSpacing: 0.4,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),

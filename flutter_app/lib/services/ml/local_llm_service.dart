@@ -174,8 +174,14 @@ class LocalLlmService {
     final int twistIndex = segmentCount > 2 ? segmentCount ~/ 2 : segmentCount - 1;
 
     final List<Map<String, dynamic>> segments = <Map<String, dynamic>>[];
-    final List<String> facts =
-        searchFacts.where((String fact) => fact.trim().isNotEmpty).toList();
+    final List<String> facts = <String>[];
+    for (final String raw in searchFacts) {
+      facts.addAll(_expandFacts(raw));
+    }
+
+    if (facts.isEmpty && searchFacts.isNotEmpty) {
+      facts.addAll(searchFacts);
+    }
 
     String _titleCaseTopic(String value) {
       if (value.trim().isEmpty) {
@@ -192,27 +198,13 @@ class LocalLlmService {
     final String topicDisplay = topic.trim().isEmpty ? topicTitle : topic.trim();
 
     String humanizeFact(String factLine) {
-      String cleaned = factLine
-          .replaceFirst(RegExp(r'^[-–—]\s*'), '')
-          .replaceAll(RegExp(r'\s+'), ' ')
-          .trim();
-      cleaned = cleaned
-          .replaceFirst(
-            RegExp(r'^Share something useful about ', caseSensitive: false),
-            'Highlight how ',
-          )
-          .replaceFirst(
-            RegExp(r'^Share a useful detail about ', caseSensitive: false),
-            'Highlight how ',
-          );
-      if (cleaned.endsWith('.')) {
-        cleaned = cleaned.substring(0, cleaned.length - 1);
-      }
+      String cleaned = factLine.trim();
       if (cleaned.isEmpty) {
-        cleaned = 'highlight how $topicDisplay is showing up in real life right now';
+        return 'Highlight how $topicDisplay is already showing up in real life right now.';
       }
-      if (cleaned.isNotEmpty) {
-        cleaned = cleaned[0].toLowerCase() + cleaned.substring(1);
+      cleaned = cleaned.replaceAll(RegExp(r'\s+'), ' ').trim();
+      if (!cleaned.endsWith('.')) {
+        cleaned = '$cleaned.';
       }
       return cleaned;
     }
@@ -230,18 +222,18 @@ class LocalLlmService {
         'Drop the viewer right in: $topicDisplay is already rewriting what they thought was settled.',
       ];
       final List<String> midHooks = <String>[
-        'Keep that $toneDescriptor rhythm pounding by showing how $topicDisplay collides with an ordinary moment.',
-        'Shift the angle so $topicDisplay hits like breaking gossip in someone’s notifications.',
-        'Reveal the twist people miss about $topicDisplay when they only skim the headline.',
+        'Show how $topicDisplay keeps gaining ground from one ordinary moment to the next.',
+        'Let the viewer feel the momentum building as $topicDisplay gathers allies.',
+        'Reveal the angle people miss when they only skim headlines about $topicDisplay.',
       ];
       final List<String> lastHooks = <String>[
         'Stick the landing with that same $toneDescriptor energy and make $topicDisplay impossible to ignore.',
         'Bring it home so $topicDisplay becomes the decision they have to make next.',
       ];
       final List<String> detailPrompts = <String>[
-        'Work this in like it just happened to someone they know: $factPrompt, and make it feel personal.',
-        'Use it as a quick proof point without sounding scripted: $factPrompt, then tie it to what the viewer controls.',
-        'Deliver it like overheard gossip that matters: $factPrompt, and explain why it hits right now.',
+        'Here’s what it looks like on the ground: $factPrompt',
+        'Make it feel personal with a quick win: $factPrompt',
+        'Share the proof so it sticks: $factPrompt',
       ];
       final List<String> genericDetails = <String>[
         'Drop in a concrete, human-sized example that proves $topicDisplay isn’t abstract.',
@@ -259,11 +251,11 @@ class LocalLlmService {
       ];
 
       final List<String> twistHooks = <String>[
-        'Lean into the doubt: what if $topicDisplay is more complicated than the headline admits?',
-        'Acknowledge the skeptic in the room and turn it into a $toneDescriptor punchline about $topicDisplay.',
+        'Pause on the doubt people whisper about $topicDisplay and call it out directly.',
+        'Acknowledge the skeptic in the room so $topicDisplay feels impossible to ignore.',
       ];
       final List<String> twistClosers = <String>[
-        'Flip that hesitation into a reason the viewer needs to stay and see what comes next.',
+        'Flip that hesitation into a reason the viewer leans in.',
         'Answer the doubt with a believable scenario that still keeps the energy high.',
       ];
 
@@ -390,6 +382,39 @@ class LocalLlmService {
       _interpreter!.close();
       _interpreter = null;
     }
+  }
+
+  static List<String> _expandFacts(String raw) {
+    final String trimmed = raw.trim();
+    if (trimmed.isEmpty) {
+      return <String>[];
+    }
+
+    final String normalized = trimmed
+        .replaceAll(RegExp(r'\r'), '\n')
+        .replaceAll('\t', ' ');
+
+    final RegExp bulletLine = RegExp(r'\d+\.\s+([^\n]+)', caseSensitive: false);
+    final Iterable<RegExpMatch> bulletMatches = bulletLine.allMatches(normalized);
+    final List<String> results = <String>[];
+
+    if (bulletMatches.isNotEmpty) {
+      for (final RegExpMatch match in bulletMatches) {
+        final String? captured = match.group(1);
+        if (captured != null && captured.trim().isNotEmpty) {
+          results.add(captured.trim());
+        }
+      }
+    } else {
+      for (final String piece
+          in normalized.split(RegExp(r'[\n•·]+')).map((String value) => value.trim())) {
+        if (piece.isNotEmpty) {
+          results.add(piece);
+        }
+      }
+    }
+
+    return results;
   }
 
   static List<ScriptSegment> _parseSegments(String rawContent, int length) {
