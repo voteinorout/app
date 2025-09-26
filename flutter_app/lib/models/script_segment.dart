@@ -1,11 +1,13 @@
 class ScriptSegment {
   final int startTime; // seconds
+  final int endTime; // seconds
   final String voiceover;
   final String onScreenText;
   final String visualsActions;
 
   ScriptSegment({
     required this.startTime,
+    required this.endTime,
     required this.voiceover,
     required this.onScreenText,
     required this.visualsActions,
@@ -13,6 +15,6 @@ class ScriptSegment {
 
   @override
   String toString() {
-    return "$startTime-${startTime + 4}s: Voiceover: $voiceover | Visuals: $visualsActions";
+    return "$startTime-${endTime}s: Voiceover: $voiceover | Visuals: $visualsActions";
   }
 }

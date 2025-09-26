@@ -7,7 +7,8 @@ export default async function handler(req, res) {
 
   const { topic, length, style, cta, searchFacts } = req.body;
   const beatLength = 4; // Four-second pacing keeps beats punchy
-  const totalLength = Number(length) || 30;
+  const requestedLength = Number(length) || 30;
+  const totalLength = Math.max(4, Math.min(90, Math.round(requestedLength)));
   const facts = Array.isArray(searchFacts)
     ? searchFacts.filter((fact) => typeof fact === 'string' && fact.trim().length > 0)
     : [];

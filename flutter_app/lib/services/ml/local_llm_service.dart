@@ -371,6 +371,7 @@ class LocalLlmService {
           : '${last.voiceover} ${_craftInferredCtaSentence(topic)}';
       segments[segments.length - 1] = ScriptSegment(
         startTime: last.startTime,
+        endTime: last.endTime,
         voiceover: appendedVoiceover.trim(),
         onScreenText: last.onScreenText,
         visualsActions: last.visualsActions,
@@ -435,9 +436,16 @@ class LocalLlmService {
           continue;
         }
 
+        final int rawEndTime = _coerceStartTime(
+          segment['endTime'],
+          startTime + beatDuration,
+        );
+        final int clampedEnd = max(startTime + 1, min(length, rawEndTime));
+
         scriptSegments.add(
           ScriptSegment(
             startTime: startTime,
+            endTime: clampedEnd,
             voiceover: voiceover,
             onScreenText: onScreenText,
             visualsActions: visualsActions,

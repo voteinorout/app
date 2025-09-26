@@ -24,10 +24,11 @@ class ScriptGenerator {
   }) async {
     _lastRunWarning = null;
     final String trimmedCta = (cta ?? '').trim();
+    final int targetLength = max(4, min(length, 90));
 
     final String? remoteScript = await OpenAIService.generateJsonScript(
       topic: topic,
-      length: length,
+      length: targetLength,
       style: style,
       cta: trimmedCta.isEmpty ? null : trimmedCta,
     );
@@ -46,7 +47,7 @@ class ScriptGenerator {
     final List<ScriptSegment> localSegments =
         await LocalLlmService.generateFallbackSegments(
       topic: topic,
-      length: length,
+      length: targetLength,
       style: style,
       cta: trimmedCta.isEmpty ? null : trimmedCta,
     );
@@ -60,7 +61,7 @@ class ScriptGenerator {
 
     final StringBuffer buffer = StringBuffer();
     for (final ScriptSegment segment in localSegments) {
-      final int end = min(length, segment.startTime + _fallbackBeatDurationSeconds);
+      final int end = min(targetLength, segment.endTime);
       buffer.writeln('${segment.startTime}-${end}s:');
       buffer.writeln('Voiceover: ${segment.voiceover}');
       if (segment.visualsActions.isNotEmpty) {
@@ -119,9 +120,16 @@ class ScriptGenerator {
           continue;
         }
 
+        final int rawEndTime = _coerceStartTime(
+          segment['endTime'],
+          startTime + _fallbackBeatDurationSeconds,
+        );
+        final int clampedEnd = max(startTime + 1, min(length, rawEndTime));
+
         scriptSegments.add(
           ScriptSegment(
             startTime: startTime,
+            endTime: clampedEnd,
             voiceover: voiceover,
             onScreenText: onScreenText,
             visualsActions: visualsActions,

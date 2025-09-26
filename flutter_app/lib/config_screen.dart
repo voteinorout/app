@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -55,7 +57,8 @@ class _ConfigScreenState extends State<ConfigScreen>
       return;
     }
 
-    final int length = int.tryParse(_lengthController.text) ?? 30;
+    final int parsedLength = int.tryParse(_lengthController.text) ?? 30;
+    final int length = max(4, min(parsedLength, 90));
     final String selectedStyle =
         _style == 'Other' ? 'Unspecified' : _style.trim();
     final String cta = _ctaController.text.trim();
@@ -67,6 +70,12 @@ class _ConfigScreenState extends State<ConfigScreen>
     });
 
     try {
+      if (parsedLength != length) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Length capped at 90 seconds.')),
+        );
+      }
+
       final String script = await ScriptGenerator.generateScript(
         topic,
         length,
