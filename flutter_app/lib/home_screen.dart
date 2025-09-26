@@ -130,14 +130,16 @@ class HomeScreen extends StatelessWidget {
                 title: 'Transcription (Beta)',
                 description:
                     'Test on-device speech-to-text using the microphone or local clips.',
-                cta: 'Try transcription',
-                onPressed: () => Navigator.pushNamed(context, '/transcription'),
+                cta: 'Coming soon',
+                onPressed: null,
+                //cta: 'Try transcription',
+                //onPressed: () => Navigator.pushNamed(context, '/transcription'),
               ),
               const SizedBox(height: 24),
               Align(
-                alignment: Alignment.centerLeft,
+                alignment: Alignment.center,
                 child: Text(
-                  'version 1.2.4',
+                  'version 1.2.8',
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onSurface.withOpacity(0.4),
                     letterSpacing: 0.4,
