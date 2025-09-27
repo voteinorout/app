@@ -45,14 +45,16 @@ class _ScriptScreenState extends State<ScriptScreen> {
           children: <Widget>[
             Text(
               topic,
-              style: theme.textTheme.titleMedium!
-                  .copyWith(fontWeight: FontWeight.w700),
+              style: theme.textTheme.titleMedium!.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'Style: $style • Format: Hook → Final CTA (30s)',
-              style: theme.textTheme.bodySmall!
-                  .copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+              style: theme.textTheme.bodySmall!.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
             ),
             const SizedBox(height: 20),
             Expanded(
@@ -81,40 +83,45 @@ class _ScriptScreenState extends State<ScriptScreen> {
                             child: MarkdownBody(
                               data: script,
                               selectable: true,
-                              styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
-                                h1: theme.textTheme.titleMedium!
-                                    .copyWith(fontWeight: FontWeight.w700),
-                                h2: theme.textTheme.titleSmall!
-                                    .copyWith(fontWeight: FontWeight.w700),
-                                p: theme.textTheme.bodyMedium!
-                                    .copyWith(height: 1.4),
-                                listBullet: theme.textTheme.bodyMedium!
-                                    .copyWith(fontWeight: FontWeight.w600),
-                                strong: theme.textTheme.bodyMedium!
-                                    .copyWith(fontWeight: FontWeight.w700),
-                                blockquote: theme.textTheme.bodySmall!
-                                    .copyWith(
-                                  color: theme.colorScheme.onSurface
-                                      .withOpacity(0.6),
-                                  height: 1.4,
-                                ),
-                                blockquotePadding:
-                                    const EdgeInsets.symmetric(horizontal: 12)
-                                        .copyWith(top: 4, bottom: 4),
-                                blockquoteDecoration: BoxDecoration(
-                                  border: Border(
-                                    left: BorderSide(
-                                      color: theme.colorScheme.onSurface
-                                          .withOpacity(0.12),
-                                      width: 2,
+                              styleSheet: MarkdownStyleSheet.fromTheme(theme)
+                                  .copyWith(
+                                    h1: theme.textTheme.titleMedium!.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                    h2: theme.textTheme.titleSmall!.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                    p: theme.textTheme.bodyMedium!.copyWith(
+                                      height: 1.4,
+                                    ),
+                                    listBullet: theme.textTheme.bodyMedium!
+                                        .copyWith(fontWeight: FontWeight.w600),
+                                    strong: theme.textTheme.bodyMedium!
+                                        .copyWith(fontWeight: FontWeight.w700),
+                                    blockquote: theme.textTheme.bodySmall!
+                                        .copyWith(
+                                          color: theme.colorScheme.onSurface
+                                              .withOpacity(0.6),
+                                          height: 1.4,
+                                        ),
+                                    blockquotePadding:
+                                        const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                        ).copyWith(top: 4, bottom: 4),
+                                    blockquoteDecoration: BoxDecoration(
+                                      border: Border(
+                                        left: BorderSide(
+                                          color: theme.colorScheme.onSurface
+                                              .withOpacity(0.12),
+                                          width: 2,
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
                             ),
                           ),
                         ),
-              ),
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -148,8 +155,8 @@ class _ScriptScreenState extends State<ScriptScreen> {
 
   void _copyToClipboard(BuildContext context, String script) {
     Clipboard.setData(ClipboardData(text: script));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Script copied to clipboard')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Script copied to clipboard')));
   }
 }

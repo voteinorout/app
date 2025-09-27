@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:vioo_app/services/remote/proxy_config.dart';
-import 'config_screen.dart';
-import 'home_screen.dart';
-import 'script_screen.dart';
+import 'package:vioo_app/features/home/screens/home_screen.dart';
+import 'package:vioo_app/features/script_generator/screens/config_screen.dart';
+import 'package:vioo_app/features/script_generator/screens/script_screen.dart';
+import 'package:vioo_app/shared/config/proxy_config.dart';
 
 const String _scriptProxyEndpoint = ProxyConfig.scriptProxyEndpoint;
 
@@ -44,9 +44,7 @@ class VoteInOrOutApp extends StatelessWidget {
 
     const OutlineInputBorder baseBorder = OutlineInputBorder(
       borderRadius: BorderRadius.all(Radius.circular(12)),
-      borderSide: BorderSide(
-        color: Color.fromRGBO(3, 23, 80, 0.12),
-      ),
+      borderSide: BorderSide(color: Color.fromRGBO(3, 23, 80, 0.12)),
     );
 
     const OutlineInputBorder focusedBorder = OutlineInputBorder(
@@ -106,8 +104,10 @@ class VoteInOrOutApp extends StatelessWidget {
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: Colors.white,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
           border: baseBorder,
           enabledBorder: baseBorder,
           focusedBorder: focusedBorder,
@@ -117,9 +117,9 @@ class VoteInOrOutApp extends StatelessWidget {
           ),
         ),
         textTheme: Typography.material2021().black.apply(
-              bodyColor: const Color(0xFF1B1D28),
-              displayColor: const Color(0xFF1B1D28),
-            ),
+          bodyColor: const Color(0xFF1B1D28),
+          displayColor: const Color(0xFF1B1D28),
+        ),
       ),
       initialRoute: '/splash',
       routes: {

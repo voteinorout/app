@@ -35,16 +35,18 @@ class HomeScreen extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: theme.textTheme.titleMedium!
-                            .copyWith(fontWeight: FontWeight.w700),
+                        style: theme.textTheme.titleMedium!.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         description,
-                        style: theme.textTheme.bodyMedium!
-                            .copyWith(
-                                color: theme.colorScheme.onSurface
-                                    .withValues(alpha: 0.7)),
+                        style: theme.textTheme.bodyMedium!.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.7,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -54,10 +56,7 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                onPressed: onPressed,
-                child: Text(cta),
-              ),
+              child: ElevatedButton(onPressed: onPressed, child: Text(cta)),
             ),
           ],
         ),
@@ -85,16 +84,16 @@ class HomeScreen extends StatelessWidget {
             children: [
               Text(
                 'Viral Script Generator',
-                style: theme.textTheme.headlineSmall!
-                    .copyWith(fontWeight: FontWeight.w700),
+                style: theme.textTheme.headlineSmall!.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               const SizedBox(height: 6),
               Text(
                 'Campaign-ready scripts that keep viewers watching and taking action.',
-                style: theme.textTheme.bodyMedium!
-                    .copyWith(
-                        color: theme.colorScheme.onSurface
-                            .withValues(alpha: 0.7)),
+                style: theme.textTheme.bodyMedium!.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
               ),
               const SizedBox(height: 28),
               _featureCard(

@@ -4,8 +4,8 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:tflite_flutter/tflite_flutter.dart';
-import 'package:vioo_app/models/script_segment.dart';
-import 'package:vioo_app/services/openai_service.dart';
+import 'package:vioo_app/features/script_generator/models/script_segment.dart';
+import 'package:vioo_app/features/script_generator/services/openai_service.dart';
 
 /// Simple wrapper around a TensorFlow Lite text generation model that turns
 /// prompts into script JSON. The actual model is expected to expose a
@@ -21,11 +21,41 @@ class LocalLlmService {
   static String? _lastError;
   static const int _fallbackTotalLength = 30;
   static const List<_FallbackBeat> _fallbackBeatPlan = <_FallbackBeat>[
-    _FallbackBeat(label: 'Hook', start: 0, end: 6, highlightFact: true, fallbackToTopic: true),
-    _FallbackBeat(label: 'Spark', start: 6, end: 12, highlightFact: true, fallbackToTopic: true),
-    _FallbackBeat(label: 'Proof', start: 12, end: 18, highlightFact: true, fallbackToTopic: true),
-    _FallbackBeat(label: 'Turn', start: 18, end: 24, highlightFact: true, fallbackToTopic: true),
-    _FallbackBeat(label: 'Final CTA', start: 24, end: 30, highlightFact: true, fallbackToTopic: true),
+    _FallbackBeat(
+      label: 'Hook',
+      start: 0,
+      end: 6,
+      highlightFact: true,
+      fallbackToTopic: true,
+    ),
+    _FallbackBeat(
+      label: 'Spark',
+      start: 6,
+      end: 12,
+      highlightFact: true,
+      fallbackToTopic: true,
+    ),
+    _FallbackBeat(
+      label: 'Proof',
+      start: 12,
+      end: 18,
+      highlightFact: true,
+      fallbackToTopic: true,
+    ),
+    _FallbackBeat(
+      label: 'Turn',
+      start: 18,
+      end: 24,
+      highlightFact: true,
+      fallbackToTopic: true,
+    ),
+    _FallbackBeat(
+      label: 'Final CTA',
+      start: 24,
+      end: 30,
+      highlightFact: true,
+      fallbackToTopic: true,
+    ),
   ];
 
   /// Lazily loads the interpreter from assets so callers do not pay the cost
@@ -120,7 +150,9 @@ class LocalLlmService {
     final String trimmedStyle = style.trim();
     final bool hasExplicitStyle =
         trimmedStyle.isNotEmpty && trimmedStyle.toLowerCase() != 'other';
-    final String tone = hasExplicitStyle ? trimmedStyle : 'lighthearted and comedic';
+    final String tone = hasExplicitStyle
+        ? trimmedStyle
+        : 'lighthearted and comedic';
     final List<String> cleanedFacts = _prepareFacts(searchFacts);
     final String factsInstruction = cleanedFacts.isNotEmpty
         ? 'Integrate every one of these facts somewhere in the script, quoting each number or named detail plainly and exactly once: ${cleanedFacts.join('; ')}. Do not paraphrase away the numbers, and never invent new data.'
@@ -131,17 +163,33 @@ class LocalLlmService {
         'You are a campaign storyteller crafting a $length-second video script about "$topic" in a ${tone.toLowerCase()} tone.',
       )
       ..writeln()
-      ..writeln('Break the story into these exact beats and include each label with its timestamp:')
-      ..writeln('- Hook (0-6s) — deliver a bold opener that makes $topic impossible to ignore right now.')
-      ..writeln('- Spark (6-12s) — explain the catalyst or stakes that keep the viewer leaning in.')
-      ..writeln('- Proof (12-18s) — present the evidence, stat, or lived moment that makes the story undeniable.')
-      ..writeln('- Turn (18-24s) — pivot toward the hopeful path forward and show who is already driving it.')
-      ..writeln('- Final CTA (24-30s) — land the CTA with urgency, clarity, and emotional payoff.')
+      ..writeln(
+        'Break the story into these exact beats and include each label with its timestamp:',
+      )
+      ..writeln(
+        '- Hook (0-6s) — deliver a bold opener that makes $topic impossible to ignore right now.',
+      )
+      ..writeln(
+        '- Spark (6-12s) — explain the catalyst or stakes that keep the viewer leaning in.',
+      )
+      ..writeln(
+        '- Proof (12-18s) — present the evidence, stat, or lived moment that makes the story undeniable.',
+      )
+      ..writeln(
+        '- Turn (18-24s) — pivot toward the hopeful path forward and show who is already driving it.',
+      )
+      ..writeln(
+        '- Final CTA (24-30s) — land the CTA with urgency, clarity, and emotional payoff.',
+      )
       ..writeln()
       ..writeln('For each beat, output exactly this format:')
       ..writeln('**Hook (0-6s):**')
-      ..writeln('Voiceover: <3-4 sentences, 35-45 words, propelling the story forward with vivid specificity>')
-      ..writeln('Visuals: <one dynamic sentence suggesting kinetic supporting footage>');
+      ..writeln(
+        'Voiceover: <3-4 sentences, 35-45 words, propelling the story forward with vivid specificity>',
+      )
+      ..writeln(
+        'Visuals: <one dynamic sentence suggesting kinetic supporting footage>',
+      );
 
     if (cleanedFacts.isNotEmpty) {
       buffer.writeln('\nWeave in and paraphrase relevant details from:');
@@ -153,16 +201,28 @@ class LocalLlmService {
     buffer
       ..writeln()
       ..writeln('Guidelines:')
-      ..writeln('- Create a seamless narrative arc where every beat references or escalates the one before it.')
-      ..writeln('- Use sharp humor, puns, and fluid metaphors tailored to the topic without repeating opening words.')
-      ..writeln('- Voiceover must flow as complete sentences; avoid bullet fragments.')
-      ..writeln('- Visuals should suggest clear, vivid shots or actions that match the voiceover.')
+      ..writeln(
+        '- Create a seamless narrative arc where every beat references or escalates the one before it.',
+      )
+      ..writeln(
+        '- Use sharp humor, puns, and fluid metaphors tailored to the topic without repeating opening words.',
+      )
+      ..writeln(
+        '- Voiceover must flow as complete sentences; avoid bullet fragments.',
+      )
+      ..writeln(
+        '- Visuals should suggest clear, vivid shots or actions that match the voiceover.',
+      )
       ..writeln('- Never mention on-screen text or captions.')
       ..writeln('- $factsInstruction')
-      ..writeln(hasExplicitStyle
-          ? '- Match that tone in every beat without drifting.'
-          : '- Keep it quick, warm, and just mischievous enough to stay memorable.')
-      ..writeln('- If a CTA is provided, weave it naturally into the Final CTA beat; otherwise invent a specific, time-bound action.');
+      ..writeln(
+        hasExplicitStyle
+            ? '- Match that tone in every beat without drifting.'
+            : '- Keep it quick, warm, and just mischievous enough to stay memorable.',
+      )
+      ..writeln(
+        '- If a CTA is provided, weave it naturally into the Final CTA beat; otherwise invent a specific, time-bound action.',
+      );
 
     return buffer.toString();
   }
@@ -204,8 +264,11 @@ class LocalLlmService {
       }
       return value
           .split(RegExp(r'\s+'))
-          .map((String word) =>
-              word.isEmpty ? word : '${word[0].toUpperCase()}${word.substring(1)}')
+          .map(
+            (String word) => word.isEmpty
+                ? word
+                : '${word[0].toUpperCase()}${word.substring(1)}',
+          )
           .join(' ');
     }
 
@@ -291,54 +354,92 @@ class LocalLlmService {
 
       switch (beat.label) {
         case 'Hook':
-          sentences.add(_ensureSentence(
-            'Hit the feed with a $toneDescriptor first line so $topicDisplay feels like breaking news, not background noise',
-          ));
-          final String factLine = factHighlight('Lead with the jaw-dropping proof:');
+          sentences.add(
+            _ensureSentence(
+              'Hit the feed with a $toneDescriptor first line so $topicDisplay feels like breaking news, not background noise',
+            ),
+          );
+          final String factLine = factHighlight(
+            'Lead with the jaw-dropping proof:',
+          );
           if (factLine.isNotEmpty) {
             sentences.add(factLine);
           }
-          sentences.add(_ensureSentence('Leave them hanging on a question the next beat must answer'));
+          sentences.add(
+            _ensureSentence(
+              'Leave them hanging on a question the next beat must answer',
+            ),
+          );
           break;
         case 'Spark':
-          sentences.add(_ensureSentence(
-            'Name the spark that proves this story is unfolding right now—who lit the fuse and why it matters tonight',
-          ));
-          final String factLine = factHighlight('Spell out the stakes they probably have not heard:');
+          sentences.add(
+            _ensureSentence(
+              'Name the spark that proves this story is unfolding right now—who lit the fuse and why it matters tonight',
+            ),
+          );
+          final String factLine = factHighlight(
+            'Spell out the stakes they probably have not heard:',
+          );
           if (factLine.isNotEmpty) {
             sentences.add(factLine);
           }
-          sentences.add(_ensureSentence('Make the viewer feel the stakes tightening without losing momentum'));
+          sentences.add(
+            _ensureSentence(
+              'Make the viewer feel the stakes tightening without losing momentum',
+            ),
+          );
           break;
         case 'Proof':
-          sentences.add(_ensureSentence(
-            'Drop the receipts that lock the narrative in place: show what changed, who felt it, and how big the shift really is',
-          ));
+          sentences.add(
+            _ensureSentence(
+              'Drop the receipts that lock the narrative in place: show what changed, who felt it, and how big the shift really is',
+            ),
+          );
           final String factLine = factHighlight('Quote the evidence straight:');
           if (factLine.isNotEmpty) {
             sentences.add(factLine);
           }
-          sentences.add(_ensureSentence('Tie the evidence straight back to the spark so the arc stays seamless'));
+          sentences.add(
+            _ensureSentence(
+              'Tie the evidence straight back to the spark so the arc stays seamless',
+            ),
+          );
           break;
         case 'Turn':
-          sentences.add(_ensureSentence(
-            'Show the pivot—people flipping frustration into forward motion and inviting the viewer into that turn',
-          ));
-          final String factLine = factHighlight('Point to the momentum that proves the turn is real:');
+          sentences.add(
+            _ensureSentence(
+              'Show the pivot—people flipping frustration into forward motion and inviting the viewer into that turn',
+            ),
+          );
+          final String factLine = factHighlight(
+            'Point to the momentum that proves the turn is real:',
+          );
           if (factLine.isNotEmpty) {
             sentences.add(factLine);
           }
-          sentences.add(_ensureSentence('Set up the CTA by hinting at what scales if more of us join in'));
+          sentences.add(
+            _ensureSentence(
+              'Set up the CTA by hinting at what scales if more of us join in',
+            ),
+          );
           break;
         case 'Final CTA':
-          sentences.add(_ensureSentence(
-            'Deliver the CTA like a payoff: spell out the action, the urgency, and the emotional win for taking it now',
-          ));
-          final String factLine = factHighlight('Remind them what is on the line:');
+          sentences.add(
+            _ensureSentence(
+              'Deliver the CTA like a payoff: spell out the action, the urgency, and the emotional win for taking it now',
+            ),
+          );
+          final String factLine = factHighlight(
+            'Remind them what is on the line:',
+          );
           if (factLine.isNotEmpty) {
             sentences.add(factLine);
           }
-          sentences.add(_ensureSentence('Close with a vivid image or promise that sticks after the video ends'));
+          sentences.add(
+            _ensureSentence(
+              'Close with a vivid image or promise that sticks after the video ends',
+            ),
+          );
           break;
         default:
           final String factLine = factHighlight('Consider this detail:');
@@ -348,7 +449,9 @@ class LocalLlmService {
           break;
       }
 
-      return sentences.where((String value) => value.trim().isNotEmpty).join(' ');
+      return sentences
+          .where((String value) => value.trim().isNotEmpty)
+          .join(' ');
     }
 
     String buildVisuals({
@@ -425,8 +528,10 @@ class LocalLlmService {
       style: style,
       searchFacts: searchFacts ?? <String>[],
     );
-    final List<ScriptSegment> segments =
-        _parseSegments(rawJson, _fallbackTotalLength);
+    final List<ScriptSegment> segments = _parseSegments(
+      rawJson,
+      _fallbackTotalLength,
+    );
     if (segments.isNotEmpty) {
       final ScriptSegment last = segments.last;
       final String trimmedCta = cta?.trim() ?? '';
@@ -534,7 +639,9 @@ class LocalLlmService {
         .replaceAll('\t', ' ');
 
     final RegExp bulletLine = RegExp(r'\d+\.\s+([^\n]+)', caseSensitive: false);
-    final Iterable<RegExpMatch> bulletMatches = bulletLine.allMatches(normalized);
+    final Iterable<RegExpMatch> bulletMatches = bulletLine.allMatches(
+      normalized,
+    );
     final List<String> results = <String>[];
 
     if (bulletMatches.isNotEmpty) {
@@ -546,7 +653,9 @@ class LocalLlmService {
       }
     } else {
       for (final String piece
-          in normalized.split(RegExp(r'[\n•·]+')).map((String value) => value.trim())) {
+          in normalized
+              .split(RegExp(r'[\n•·]+'))
+              .map((String value) => value.trim())) {
         if (piece.isNotEmpty) {
           results.add(piece);
         }
@@ -579,20 +688,22 @@ class LocalLlmService {
         return <ScriptSegment>[];
       }
 
-      final List<Map<String, dynamic>> typedSegments =
-          segmentList.whereType<Map<String, dynamic>>().toList();
+      final List<Map<String, dynamic>> typedSegments = segmentList
+          .whereType<Map<String, dynamic>>()
+          .toList();
       final int expectedSegments = _fallbackBeatPlan.length;
 
       final List<ScriptSegment> scriptSegments = <ScriptSegment>[];
 
       for (int i = 0; i < typedSegments.length; i++) {
         final Map<String, dynamic> segment = typedSegments[i];
-        final _FallbackBeat defaultBeat =
-            i < _fallbackBeatPlan.length
-                ? _fallbackBeatPlan[i]
-                : _fallbackBeatPlan.last;
-        final int startTime =
-            _coerceStartTime(segment['startTime'], defaultBeat.start);
+        final _FallbackBeat defaultBeat = i < _fallbackBeatPlan.length
+            ? _fallbackBeatPlan[i]
+            : _fallbackBeatPlan.last;
+        final int startTime = _coerceStartTime(
+          segment['startTime'],
+          defaultBeat.start,
+        );
         final String voiceover = segment['voiceover']?.toString().trim() ?? '';
         final String onScreenText =
             segment['onScreenText']?.toString().trim() ?? '';
@@ -614,7 +725,9 @@ class LocalLlmService {
             startTime: startTime,
             endTime: clampedEnd,
             voiceover: voiceover,
-            onScreenText: onScreenText.isEmpty ? defaultBeat.label : onScreenText,
+            onScreenText: onScreenText.isEmpty
+                ? defaultBeat.label
+                : onScreenText,
             visualsActions: visualsActions,
           ),
         );

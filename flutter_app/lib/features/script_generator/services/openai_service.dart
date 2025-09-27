@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:retry/retry.dart';
-import 'package:vioo_app/services/remote/proxy_config.dart';
+import 'package:vioo_app/shared/config/proxy_config.dart';
 
 class OpenAIService {
   static const String _endpoint = ProxyConfig.scriptProxyEndpoint;
@@ -16,7 +16,9 @@ class OpenAIService {
   }) async {
     if (_endpoint.isEmpty) {
       if (kDebugMode) {
-        debugPrint('SCRIPT_PROXY_ENDPOINT not provided; skipping hosted generation.');
+        debugPrint(
+          'SCRIPT_PROXY_ENDPOINT not provided; skipping hosted generation.',
+        );
       }
       return null;
     }
@@ -68,7 +70,9 @@ class OpenAIService {
           return data.trim();
         }
       } else if (kDebugMode) {
-        debugPrint('OpenAIService error: ${response.statusCode} - ${response.body}');
+        debugPrint(
+          'OpenAIService error: ${response.statusCode} - ${response.body}',
+        );
       }
     } catch (e) {
       if (kDebugMode) {

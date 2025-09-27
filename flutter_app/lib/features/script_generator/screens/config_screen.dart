@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:vioo_app/services/remote/script_generator.dart';
+import 'package:vioo_app/features/script_generator/services/remote/script_generator.dart';
 
 class ConfigScreen extends StatefulWidget {
   const ConfigScreen({super.key});
@@ -53,8 +53,9 @@ class _ConfigScreenState extends State<ConfigScreen>
     }
 
     const int length = 30;
-    final String selectedStyle =
-        _style == 'Other' ? 'Unspecified' : _style.trim();
+    final String selectedStyle = _style == 'Other'
+        ? 'Unspecified'
+        : _style.trim();
     final String cta = _ctaController.text.trim();
 
     setState(() {
@@ -82,9 +83,9 @@ class _ConfigScreenState extends State<ConfigScreen>
 
       final String? warning = ScriptGenerator.lastRunWarning;
       if (warning != null && warning.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(warning)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(warning)));
       }
 
       _tabController.animateTo(1);
@@ -93,7 +94,11 @@ class _ConfigScreenState extends State<ConfigScreen>
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Generation failed: $e. Check your connection or try again.')),
+        SnackBar(
+          content: Text(
+            'Generation failed: $e. Check your connection or try again.',
+          ),
+        ),
       );
     } finally {
       if (mounted) {
@@ -104,28 +109,29 @@ class _ConfigScreenState extends State<ConfigScreen>
 
   void _copyScript(BuildContext context, String script) {
     Clipboard.setData(ClipboardData(text: script));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Script copied to clipboard')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Script copied to clipboard')));
   }
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final ButtonStyle? primaryButtonStyle = theme.elevatedButtonTheme.style?.copyWith(
-      overlayColor: MaterialStateProperty.resolveWith<Color?>(
-        (Set<MaterialState> states) {
-          if (states.contains(MaterialState.hovered) ||
-              states.contains(MaterialState.focused)) {
-            return theme.colorScheme.onPrimary.withOpacity(0.10);
-          }
-          if (states.contains(MaterialState.pressed)) {
-            return theme.colorScheme.onPrimary.withOpacity(0.16);
-          }
-          return null;
-        },
-      ),
-    );
+    final ButtonStyle? primaryButtonStyle = theme.elevatedButtonTheme.style
+        ?.copyWith(
+          overlayColor: MaterialStateProperty.resolveWith<Color?>((
+            Set<MaterialState> states,
+          ) {
+            if (states.contains(MaterialState.hovered) ||
+                states.contains(MaterialState.focused)) {
+              return theme.colorScheme.onPrimary.withOpacity(0.10);
+            }
+            if (states.contains(MaterialState.pressed)) {
+              return theme.colorScheme.onPrimary.withOpacity(0.16);
+            }
+            return null;
+          }),
+        );
 
     return Scaffold(
       appBar: AppBar(
@@ -143,8 +149,7 @@ class _ConfigScreenState extends State<ConfigScreen>
         children: <Widget>[
           SafeArea(
             child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -172,8 +177,8 @@ class _ConfigScreenState extends State<ConfigScreen>
                               ),
                               validator: (String? value) =>
                                   (value == null || value.trim().isEmpty)
-                                      ? 'Please describe the payoff or topic.'
-                                      : null,
+                                  ? 'Please describe the payoff or topic.'
+                                  : null,
                             ),
                             const SizedBox(height: 20),
                             TextFormField(
@@ -184,7 +189,8 @@ class _ConfigScreenState extends State<ConfigScreen>
                               style: theme.textTheme.bodyMedium,
                               decoration: const InputDecoration(
                                 labelText: 'Final call to action (optional)',
-                                hintText: 'e.g. Make a plan to vote at vote.org',
+                                hintText:
+                                    'e.g. Make a plan to vote at vote.org',
                               ),
                             ),
                             const SizedBox(height: 20),
@@ -192,11 +198,21 @@ class _ConfigScreenState extends State<ConfigScreen>
                               initialValue: _style,
                               items: const <DropdownMenuItem<String>>[
                                 DropdownMenuItem(
-                                    value: 'Educational', child: Text('Educational')),
+                                  value: 'Educational',
+                                  child: Text('Educational'),
+                                ),
                                 DropdownMenuItem(
-                                    value: 'Motivational', child: Text('Motivational')),
-                                DropdownMenuItem(value: 'Comedy', child: Text('Comedy')),
-                                DropdownMenuItem(value: 'Other', child: Text('Other')),
+                                  value: 'Motivational',
+                                  child: Text('Motivational'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'Comedy',
+                                  child: Text('Comedy'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'Other',
+                                  child: Text('Other'),
+                                ),
                               ],
                               decoration: const InputDecoration(
                                 labelText: 'Style (optional)',
@@ -218,8 +234,8 @@ class _ConfigScreenState extends State<ConfigScreen>
                                       },
                                 style: TextButton.styleFrom(
                                   padding: EdgeInsets.zero,
-                                  foregroundColor:
-                                      theme.colorScheme.primary.withOpacity(0.8),
+                                  foregroundColor: theme.colorScheme.primary
+                                      .withOpacity(0.8),
                                 ),
                                 child: const Text('Reset form'),
                               ),
@@ -236,8 +252,7 @@ class _ConfigScreenState extends State<ConfigScreen>
                           ? const SizedBox(
                               height: 22,
                               width: 22,
-                              child:
-                                  CircularProgressIndicator(strokeWidth: 2),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Text('Generate script'),
                     ),
@@ -273,7 +288,9 @@ class _ConfigScreenState extends State<ConfigScreen>
                         Expanded(
                           child: DecoratedBox(
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.surface.withValues(alpha: 0.35),
+                              color: theme.colorScheme.surface.withValues(
+                                alpha: 0.35,
+                              ),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: ClipRRect(
@@ -288,28 +305,40 @@ class _ConfigScreenState extends State<ConfigScreen>
                                   child: MarkdownBody(
                                     data: _generatedScript!,
                                     selectable: true,
-                                    styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
-                                      p: theme.textTheme.bodyMedium!
-                                          .copyWith(height: 1.4),
-                                      strong: theme.textTheme.bodyMedium!
-                                          .copyWith(fontWeight: FontWeight.w700),
-                                      blockquote: theme.textTheme.bodySmall!
-                                          .copyWith(
-                                        color: theme.colorScheme.onSurface
-                                            .withOpacity(0.6),
-                                        height: 1.4,
-                                      ),
-                                      blockquotePadding:
-                                          const EdgeInsets.symmetric(horizontal: 12)
-                                              .copyWith(top: 4, bottom: 2),
-                                      blockquoteDecoration: BoxDecoration(
-                                        border: Border( left: BorderSide(
-                                          color: theme.colorScheme.onSurface
-                                              .withOpacity(0.12),
-                                          width: 2,
-                                        )),
-                                      ),
-                                    ),
+                                    styleSheet:
+                                        MarkdownStyleSheet.fromTheme(
+                                          theme,
+                                        ).copyWith(
+                                          p: theme.textTheme.bodyMedium!
+                                              .copyWith(height: 1.4),
+                                          strong: theme.textTheme.bodyMedium!
+                                              .copyWith(
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                          blockquote: theme.textTheme.bodySmall!
+                                              .copyWith(
+                                                color: theme
+                                                    .colorScheme
+                                                    .onSurface
+                                                    .withOpacity(0.6),
+                                                height: 1.4,
+                                              ),
+                                          blockquotePadding:
+                                              const EdgeInsets.symmetric(
+                                                horizontal: 12,
+                                              ).copyWith(top: 4, bottom: 2),
+                                          blockquoteDecoration: BoxDecoration(
+                                            border: Border(
+                                              left: BorderSide(
+                                                color: theme
+                                                    .colorScheme
+                                                    .onSurface
+                                                    .withOpacity(0.12),
+                                                width: 2,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
                                   ),
                                 ),
                               ),
@@ -323,7 +352,9 @@ class _ConfigScreenState extends State<ConfigScreen>
                             child: Text(
                               'Fallback script',
                               style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.onSurface.withOpacity(0.5),
+                                color: theme.colorScheme.onSurface.withOpacity(
+                                  0.5,
+                                ),
                                 letterSpacing: 0.4,
                               ),
                             ),
@@ -332,7 +363,8 @@ class _ConfigScreenState extends State<ConfigScreen>
                         const SizedBox(height: 16),
                         ElevatedButton(
                           style: primaryButtonStyle,
-                          onPressed: () => _copyScript(context, _generatedScript!),
+                          onPressed: () =>
+                              _copyScript(context, _generatedScript!),
                           child: const Text('Copy script'),
                         ),
                       ],

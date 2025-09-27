@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
-import 'package:vioo_app/models/script_segment.dart';
-import 'package:vioo_app/services/ml/local_llm_service.dart';
-import 'package:vioo_app/services/openai_service.dart';
+import 'package:vioo_app/features/script_generator/models/script_segment.dart';
+import 'package:vioo_app/features/script_generator/services/ml/local_llm_service.dart';
+import 'package:vioo_app/features/script_generator/services/openai_service.dart';
 
 class ScriptGenerator {
   static const int _targetLengthSeconds = 30;
@@ -72,11 +72,11 @@ class ScriptGenerator {
     // Local fallback retains legacy JSON format which we convert to readable text.
     final List<ScriptSegment> localSegments =
         await LocalLlmService.generateFallbackSegments(
-      topic: topic,
-      length: _targetLengthSeconds,
-      style: style,
-      cta: trimmedCta.isEmpty ? null : trimmedCta,
-    );
+          topic: topic,
+          length: _targetLengthSeconds,
+          style: style,
+          cta: trimmedCta.isEmpty ? null : trimmedCta,
+        );
 
     if (localSegments.isEmpty) {
       _lastRunWarning = 'Script generator fallback returned no segments.';
@@ -107,7 +107,8 @@ class ScriptGenerator {
       fallbackSegments: localSegments,
     );
 
-    _lastRunWarning = LocalLlmService.lastError ??
+    _lastRunWarning =
+        LocalLlmService.lastError ??
         'Hosted script generation failed; using deterministic fallback.';
     return ensured;
   }
@@ -134,18 +135,22 @@ class ScriptGenerator {
       if (segmentList == null) {
         return <ScriptSegment>[];
       }
-      final List<Map<String, dynamic>> typedSegments =
-          segmentList.whereType<Map<String, dynamic>>().toList();
+      final List<Map<String, dynamic>> typedSegments = segmentList
+          .whereType<Map<String, dynamic>>()
+          .toList();
       final int expectedSegments = _beatSlots.length;
 
       final List<ScriptSegment> scriptSegments = <ScriptSegment>[];
 
       for (int i = 0; i < typedSegments.length; i++) {
         final Map<String, dynamic> segment = typedSegments[i];
-        final _BeatSlot defaultSlot =
-            i < _beatSlots.length ? _beatSlots[i] : _beatSlots.last;
-        final int startTime =
-            _coerceStartTime(segment['startTime'], defaultSlot.start);
+        final _BeatSlot defaultSlot = i < _beatSlots.length
+            ? _beatSlots[i]
+            : _beatSlots.last;
+        final int startTime = _coerceStartTime(
+          segment['startTime'],
+          defaultSlot.start,
+        );
         final String voiceover = segment['voiceover']?.toString().trim() ?? '';
         final String onScreenText =
             segment['onScreenText']?.toString().trim() ?? '';
@@ -160,16 +165,16 @@ class ScriptGenerator {
           segment['endTime'],
           defaultSlot.end,
         );
-        final int clampedEnd =
-            max(startTime + 1, min(length, rawEndTime));
+        final int clampedEnd = max(startTime + 1, min(length, rawEndTime));
 
         scriptSegments.add(
           ScriptSegment(
             startTime: startTime,
             endTime: clampedEnd,
             voiceover: voiceover,
-            onScreenText:
-                onScreenText.isEmpty ? defaultSlot.label : onScreenText,
+            onScreenText: onScreenText.isEmpty
+                ? defaultSlot.label
+                : onScreenText,
             visualsActions: visualsActions,
           ),
         );
@@ -187,8 +192,10 @@ class ScriptGenerator {
   }
 
   @visibleForTesting
-  static List<ScriptSegment> parseSegmentsForTest(String rawContent, int length) =>
-      _parseSegments(rawContent, length);
+  static List<ScriptSegment> parseSegmentsForTest(
+    String rawContent,
+    int length,
+  ) => _parseSegments(rawContent, length);
 
   static int _coerceStartTime(dynamic value, int fallback) {
     if (value is int) {
@@ -211,8 +218,9 @@ class ScriptGenerator {
       r'^(\s*)(?:\*\*)?([^:(\n]+?)\s*\((\d+\s*-\s*\d+\s*(?:s|sec|seconds)?)\)\s*:?(.+)?$',
       caseSensitive: false,
     );
-    final RegExp timeHeader =
-        RegExp(r'^(\s*)(\d+\s*-\s*\d+\s*(?:s|sec|seconds)?)\s*:(.*)');
+    final RegExp timeHeader = RegExp(
+      r'^(\s*)(\d+\s*-\s*\d+\s*(?:s|sec|seconds)?)\s*:(.*)',
+    );
     final List<String> lines = script.split('\n');
     final List<String> formatted = <String>[];
     for (final String line in lines) {
@@ -225,8 +233,7 @@ class ScriptGenerator {
       if (labelMatch != null) {
         final String prefix = labelMatch.group(1) ?? '';
         final String label = labelMatch.group(2)!.trim();
-        final String range =
-            _normalizeRange(labelMatch.group(3) ?? '');
+        final String range = _normalizeRange(labelMatch.group(3) ?? '');
         final String rest = labelMatch.group(4)?.trimLeft() ?? '';
         final String suffix = rest.isEmpty ? '' : ' $rest';
         formatted.add('$prefix**$label ($range):**$suffix');
@@ -237,7 +244,10 @@ class ScriptGenerator {
         final String prefix = timeMatch.group(1) ?? '';
         final String range = _normalizeRange(timeMatch.group(2) ?? '');
         final String rest = timeMatch.group(3)?.trimLeft() ?? '';
-        final String cleanedRest = rest.replaceFirst(RegExp(r'^\[[^\]]+\]\s*'), '');
+        final String cleanedRest = rest.replaceFirst(
+          RegExp(r'^\[[^\]]+\]\s*'),
+          '',
+        );
         final String suffix = cleanedRest.isEmpty ? '' : ' $cleanedRest';
         final _BeatSlot slot = _beatSlots.firstWhere(
           (candidate) => candidate.matchesRange(range),
@@ -269,7 +279,11 @@ class ScriptGenerator {
 
     final Map<int, ScriptSegment> fallbackByIndex = <int, ScriptSegment>{};
     if (fallbackSegments != null) {
-      for (int i = 0; i < fallbackSegments.length && i < _beatSlots.length; i++) {
+      for (
+        int i = 0;
+        i < fallbackSegments.length && i < _beatSlots.length;
+        i++
+      ) {
         fallbackByIndex[i] = fallbackSegments[i];
       }
     }
@@ -292,12 +306,13 @@ class ScriptGenerator {
       }
       buffer.writeln('**${slot.label} (${slot.rangeString}):**');
       final ScriptSegment? fallbackSegment = fallbackByIndex[actualBeats];
-      final String fallbackVoiceover = fallbackSegment != null &&
-              fallbackSegment.voiceover.trim().isNotEmpty
+      final String fallbackVoiceover =
+          fallbackSegment != null && fallbackSegment.voiceover.trim().isNotEmpty
           ? fallbackSegment.voiceover.trim()
           : 'Reinforce the story arc with a concrete stat or named source that keeps momentum strong.';
       buffer.writeln('Voiceover: $fallbackVoiceover');
-      final String fallbackVisuals = fallbackSegment != null &&
+      final String fallbackVisuals =
+          fallbackSegment != null &&
               fallbackSegment.visualsActions.trim().isNotEmpty
           ? fallbackSegment.visualsActions.trim()
           : 'Show supporting footage, charts, or receipts that underline the data point.';
@@ -313,7 +328,8 @@ class ScriptGenerator {
     return buffer.toString().trim();
   }
 
-  static int _countBeats(String script) => _beatPattern.allMatches(script).length;
+  static int _countBeats(String script) =>
+      _beatPattern.allMatches(script).length;
 
   static String _normalizeRange(String rawRange) {
     String normalized = rawRange.toLowerCase().replaceAll(RegExp(r'\s+'), '');
