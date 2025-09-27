@@ -7,7 +7,15 @@ import 'package:vioo_app/services/ml/local_llm_service.dart';
 import 'package:vioo_app/services/openai_service.dart';
 
 class ScriptGenerator {
-  static const int _fallbackBeatDurationSeconds = 4;
+  static const int _targetLengthSeconds = 30;
+  static const List<_BeatSlot> _beatSlots = <_BeatSlot>[
+    _BeatSlot(label: 'Hook', start: 0, end: 6),
+    _BeatSlot(label: 'Spark', start: 6, end: 12),
+    _BeatSlot(label: 'Proof', start: 12, end: 18),
+    _BeatSlot(label: 'Turn', start: 18, end: 24),
+    _BeatSlot(label: 'Final CTA', start: 24, end: 30),
+  ];
+  static final RegExp _beatPattern = RegExp(r'\*\*[^*]+\((\d+)-(\d+)s\):\*\*');
 
   static bool _lastRunUsedHosted = false;
   static String? _lastRunWarning;
@@ -24,30 +32,48 @@ class ScriptGenerator {
   }) async {
     _lastRunWarning = null;
     final String trimmedCta = (cta ?? '').trim();
-    final int targetLength = max(4, min(length, 90));
 
     final String? remoteScript = await OpenAIService.generateJsonScript(
       topic: topic,
-      length: targetLength,
+      length: _targetLengthSeconds,
       style: style,
       cta: trimmedCta.isEmpty ? null : trimmedCta,
     );
 
     if (remoteScript != null && remoteScript.trim().isNotEmpty) {
       _lastRunUsedHosted = true;
-      return _formatBeats(remoteScript.trim());
+      final String formatted = _formatBeats(remoteScript.trim());
+      final int beatCount = _countBeats(formatted);
+      List<ScriptSegment>? supplementSegments;
+      if (beatCount < _beatSlots.length) {
+        _lastRunWarning =
+            'Hosted script returned $beatCount of ${_beatSlots.length} beats; padding with fallback sections.';
+        supplementSegments = await LocalLlmService.generateFallbackSegments(
+          topic: topic,
+          length: _targetLengthSeconds,
+          style: style,
+          cta: trimmedCta.isEmpty ? null : trimmedCta,
+        );
+      }
+      return _ensureBeatCoverage(
+        formatted,
+        _beatSlots.length,
+        fallbackSegments: supplementSegments,
+      );
     }
 
     _lastRunUsedHosted = false;
     if (kDebugMode) {
-      debugPrint('Remote script proxy unavailable; using on-device fallback generator.');
+      debugPrint(
+        'Hosted script proxy unavailable or incomplete; using on-device fallback generator.',
+      );
     }
 
     // Local fallback retains legacy JSON format which we convert to readable text.
     final List<ScriptSegment> localSegments =
         await LocalLlmService.generateFallbackSegments(
       topic: topic,
-      length: targetLength,
+      length: _targetLengthSeconds,
       style: style,
       cta: trimmedCta.isEmpty ? null : trimmedCta,
     );
@@ -60,9 +86,10 @@ class ScriptGenerator {
     }
 
     final StringBuffer buffer = StringBuffer();
-    for (final ScriptSegment segment in localSegments) {
-      final int end = min(targetLength, segment.endTime);
-      buffer.writeln('${segment.startTime}-${end}s:');
+    for (int i = 0; i < localSegments.length && i < _beatSlots.length; i++) {
+      final ScriptSegment segment = localSegments[i];
+      final _BeatSlot slot = _beatSlots[i];
+      buffer.writeln('**${slot.label} (${slot.rangeString}):**');
       buffer.writeln('Voiceover: ${segment.voiceover}');
       if (segment.visualsActions.isNotEmpty) {
         buffer.writeln('Visuals: ${segment.visualsActions}');
@@ -73,9 +100,16 @@ class ScriptGenerator {
       buffer.writeln('Call to Action: $trimmedCta');
     }
 
-    _lastRunWarning =
-        LocalLlmService.lastError ?? 'Hosted script generation failed; using deterministic fallback.';
-    return _formatBeats(buffer.toString().trim());
+    final String formattedFallback = _formatBeats(buffer.toString().trim());
+    final String ensured = _ensureBeatCoverage(
+      formattedFallback,
+      _beatSlots.length,
+      fallbackSegments: localSegments,
+    );
+
+    _lastRunWarning = LocalLlmService.lastError ??
+        'Hosted script generation failed; using deterministic fallback.';
+    return ensured;
   }
 
   static List<ScriptSegment> _parseSegments(String rawContent, int length) {
@@ -102,14 +136,16 @@ class ScriptGenerator {
       }
       final List<Map<String, dynamic>> typedSegments =
           segmentList.whereType<Map<String, dynamic>>().toList();
-      final int expectedSegments = max(1, (length / _fallbackBeatDurationSeconds).ceil());
+      final int expectedSegments = _beatSlots.length;
 
       final List<ScriptSegment> scriptSegments = <ScriptSegment>[];
 
       for (int i = 0; i < typedSegments.length; i++) {
         final Map<String, dynamic> segment = typedSegments[i];
+        final _BeatSlot defaultSlot =
+            i < _beatSlots.length ? _beatSlots[i] : _beatSlots.last;
         final int startTime =
-            _coerceStartTime(segment['startTime'], i * _fallbackBeatDurationSeconds);
+            _coerceStartTime(segment['startTime'], defaultSlot.start);
         final String voiceover = segment['voiceover']?.toString().trim() ?? '';
         final String onScreenText =
             segment['onScreenText']?.toString().trim() ?? '';
@@ -122,16 +158,18 @@ class ScriptGenerator {
 
         final int rawEndTime = _coerceStartTime(
           segment['endTime'],
-          startTime + _fallbackBeatDurationSeconds,
+          defaultSlot.end,
         );
-        final int clampedEnd = max(startTime + 1, min(length, rawEndTime));
+        final int clampedEnd =
+            max(startTime + 1, min(length, rawEndTime));
 
         scriptSegments.add(
           ScriptSegment(
             startTime: startTime,
             endTime: clampedEnd,
             voiceover: voiceover,
-            onScreenText: onScreenText,
+            onScreenText:
+                onScreenText.isEmpty ? defaultSlot.label : onScreenText,
             visualsActions: visualsActions,
           ),
         );
@@ -169,27 +207,41 @@ class ScriptGenerator {
   }
 
   static String _formatBeats(String script) {
+    final RegExp labelHeader = RegExp(
+      r'^(\s*)(?:\*\*)?([^:(\n]+?)\s*\((\d+\s*-\s*\d+\s*(?:s|sec|seconds)?)\)\s*:?(.+)?$',
+      caseSensitive: false,
+    );
     final RegExp timeHeader =
         RegExp(r'^(\s*)(\d+\s*-\s*\d+\s*(?:s|sec|seconds)?)\s*:(.*)');
     final List<String> lines = script.split('\n');
     final List<String> formatted = <String>[];
     for (final String line in lines) {
       final String trimmed = line.trimLeft();
-      if (trimmed.startsWith('**')) {
+      if (trimmed.startsWith('**') && trimmed.contains('):**')) {
         formatted.add(line);
         continue;
       }
-      final Match? match = timeHeader.firstMatch(line);
-      if (match != null) {
-        final String prefix = match.group(1) ?? '';
-        final String range = match.group(2)!
-            .replaceAll(RegExp(r'\s+'), ' ')
-            .replaceAll(' ', '')
-            .replaceAll('sec', 's');
-        final String rest = match.group(3)?.trimLeft() ?? '';
+      final Match? labelMatch = labelHeader.firstMatch(line);
+      if (labelMatch != null) {
+        final String prefix = labelMatch.group(1) ?? '';
+        final String label = labelMatch.group(2)!.trim();
+        final String range =
+            _normalizeRange(labelMatch.group(3) ?? '');
+        final String rest = labelMatch.group(4)?.trimLeft() ?? '';
+        final String suffix = rest.isEmpty ? '' : ' $rest';
+        formatted.add('$prefix**$label ($range):**$suffix');
+        continue;
+      }
+      final Match? timeMatch = timeHeader.firstMatch(line);
+      if (timeMatch != null) {
+        final String prefix = timeMatch.group(1) ?? '';
+        final String range = _normalizeRange(timeMatch.group(2) ?? '');
+        final String rest = timeMatch.group(3)?.trimLeft() ?? '';
         final String cleanedRest = rest.replaceFirst(RegExp(r'^\[[^\]]+\]\s*'), '');
         final String suffix = cleanedRest.isEmpty ? '' : ' $cleanedRest';
-        formatted.add('$prefix**$range:**$suffix');
+        final _BeatSlot slot = _beatSlots
+            .firstWhere((_) => _.matchesRange(range), orElse: () => _BeatSlot.fallback(range));
+        formatted.add('$prefix**${slot.label} (${slot.rangeString}):**$suffix');
       } else {
         formatted.add(line);
       }
@@ -200,5 +252,103 @@ class ScriptGenerator {
       (Match m) => '${m.group(1)}> *Visuals:* ${m.group(2)}',
     );
     return formattedScript;
+  }
+
+  static String _ensureBeatCoverage(
+    String script,
+    int expectedBeats, {
+    List<ScriptSegment>? fallbackSegments,
+  }) {
+    String trimmed = script.trim();
+    int actualBeats = _countBeats(trimmed);
+    if (actualBeats >= expectedBeats) {
+      return trimmed;
+    }
+
+    final Map<int, ScriptSegment> fallbackByIndex = <int, ScriptSegment>{};
+    if (fallbackSegments != null) {
+      for (int i = 0; i < fallbackSegments.length && i < _beatSlots.length; i++) {
+        fallbackByIndex[i] = fallbackSegments[i];
+      }
+    }
+
+    String? callToAction;
+    String body = trimmed;
+    final RegExp ctaRegex = RegExp(r'(?:^|\n)(Call to Action:\s*.+)$');
+    final Match? ctaMatch = ctaRegex.firstMatch(trimmed);
+    if (ctaMatch != null) {
+      callToAction = ctaMatch.group(1)!.trim();
+      body = trimmed.substring(0, ctaMatch.start).trimRight();
+    }
+
+    final StringBuffer buffer = StringBuffer(body);
+    while (actualBeats < expectedBeats && actualBeats < _beatSlots.length) {
+      final _BeatSlot slot = _beatSlots[actualBeats];
+      if (buffer.isNotEmpty) {
+        buffer.writeln();
+        buffer.writeln();
+      }
+      buffer.writeln('**${slot.label} (${slot.rangeString}):**');
+      final ScriptSegment? fallbackSegment = fallbackByIndex[actualBeats];
+      final String fallbackVoiceover = fallbackSegment != null &&
+              fallbackSegment.voiceover.trim().isNotEmpty
+          ? fallbackSegment.voiceover.trim()
+          : 'Reinforce the story arc with a concrete stat or named source that keeps momentum strong.';
+      buffer.writeln('Voiceover: $fallbackVoiceover');
+      final String fallbackVisuals = fallbackSegment != null &&
+              fallbackSegment.visualsActions.trim().isNotEmpty
+          ? fallbackSegment.visualsActions.trim()
+          : 'Show supporting footage, charts, or receipts that underline the data point.';
+      buffer.writeln('> *Visuals:* $fallbackVisuals');
+      actualBeats += 1;
+    }
+
+    if (callToAction != null && callToAction.isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln(callToAction);
+    }
+
+    return buffer.toString().trim();
+  }
+
+  static int _countBeats(String script) => _beatPattern.allMatches(script).length;
+
+  static String _normalizeRange(String rawRange) {
+    String normalized = rawRange.toLowerCase().replaceAll(RegExp(r'\s+'), '');
+    normalized = normalized.replaceAll('seconds', 's').replaceAll('sec', 's');
+    if (!normalized.endsWith('s')) {
+      normalized = '${normalized}s';
+    }
+    return normalized;
+  }
+}
+
+class _BeatSlot {
+  final String label;
+  final int start;
+  final int end;
+
+  const _BeatSlot({
+    required this.label,
+    required this.start,
+    required this.end,
+  });
+
+  String get rangeString => '${start}-${end}s';
+  String get normalizedRange => rangeString;
+
+  bool matchesRange(String candidate) => candidate == normalizedRange;
+
+  factory _BeatSlot.fallback(String range) {
+    final String normalized = ScriptGenerator._normalizeRange(range);
+    final List<String> parts = normalized.replaceAll('s', '').split('-');
+    if (parts.length == 2) {
+      final int? startParsed = int.tryParse(parts[0]);
+      final int? endParsed = int.tryParse(parts[1]);
+      if (startParsed != null && endParsed != null) {
+        return _BeatSlot(label: 'Beat', start: startParsed, end: endParsed);
+      }
+    }
+    return const _BeatSlot(label: 'Beat', start: 0, end: 0);
   }
 }

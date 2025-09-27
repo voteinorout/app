@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:math';
 
@@ -18,6 +19,14 @@ class LocalLlmService {
   static Interpreter? _interpreter;
   static bool _isLoading = false;
   static String? _lastError;
+  static const int _fallbackTotalLength = 30;
+  static const List<_FallbackBeat> _fallbackBeatPlan = <_FallbackBeat>[
+    _FallbackBeat(label: 'Hook', start: 0, end: 6, highlightFact: true, fallbackToTopic: true),
+    _FallbackBeat(label: 'Spark', start: 6, end: 12, highlightFact: true, fallbackToTopic: true),
+    _FallbackBeat(label: 'Proof', start: 12, end: 18, highlightFact: true, fallbackToTopic: true),
+    _FallbackBeat(label: 'Turn', start: 18, end: 24, highlightFact: true, fallbackToTopic: true),
+    _FallbackBeat(label: 'Final CTA', start: 24, end: 30, highlightFact: true, fallbackToTopic: true),
+  ];
 
   /// Lazily loads the interpreter from assets so callers do not pay the cost
   /// until the fallback is needed.
@@ -60,9 +69,10 @@ class LocalLlmService {
     String? cta,
   }) async {
     // Attempt to use the hosted OpenAI/Vercel service first.
+    final int targetLength = _fallbackTotalLength;
     final String? hostedResult = await OpenAIService.generateJsonScript(
       topic: topic,
-      length: length,
+      length: targetLength,
       style: style,
       cta: cta,
       searchFacts: searchFacts,
@@ -73,7 +83,7 @@ class LocalLlmService {
 
     final String prompt = _buildPrompt(
       topic: topic,
-      length: length,
+      length: targetLength,
       style: style,
       searchFacts: searchFacts ?? <String>[],
     );
@@ -94,7 +104,7 @@ class LocalLlmService {
 
     return _generateFallbackScript(
       topic: topic,
-      length: length,
+      length: targetLength,
       style: style,
       searchFacts: searchFacts ?? <String>[],
     );
@@ -111,35 +121,48 @@ class LocalLlmService {
     final bool hasExplicitStyle =
         trimmedStyle.isNotEmpty && trimmedStyle.toLowerCase() != 'other';
     final String tone = hasExplicitStyle ? trimmedStyle : 'lighthearted and comedic';
+    final List<String> cleanedFacts = _prepareFacts(searchFacts);
+    final String factsInstruction = cleanedFacts.isNotEmpty
+        ? 'Integrate every one of these facts somewhere in the script, quoting each number or named detail plainly and exactly once: ${cleanedFacts.join('; ')}. Do not paraphrase away the numbers, and never invent new data.'
+        : 'Ground each beat in believable, specific, verifiable details without inventing statistics.';
+
     final StringBuffer buffer = StringBuffer()
       ..writeln(
         'You are a campaign storyteller crafting a $length-second video script about "$topic" in a ${tone.toLowerCase()} tone.',
       )
-      ..writeln('Break the script into 6-second beats using this exact template:')
-      ..writeln('0-6s: [hook] — conversational question that sparks curiosity.')
-      ..writeln('Voiceover: 2-3 sentences, 25-35 words, and no bullet fragments.')
-      ..writeln('Visuals: One detailed sentence describing kinetic supporting footage.')
-      ..writeln('6-12s: [next beat] — escalate the idea with creative benefits.')
-      ..writeln('12-18s: [next beat] — heighten stakes with witty or unexpected scenario.')
-      ..writeln('18-24s: [twist] — introduce a doubt or reality check with humor.')
-      ..writeln(
-        '24-${length}s: [payoff/CTA] — resolve with an inspiring lead-in to the CTA.',
-      )
-      ..writeln('Never mention on-screen text or captions. Use sharp humor, puns, and fluid metaphors tailored to the topic.')
-      ..writeln(hasExplicitStyle
-          ? 'Match that tone in every beat without drifting.'
-          : 'Keep it quick, warm, and just mischievous enough to stay memorable.');
+      ..writeln()
+      ..writeln('Break the story into these exact beats and include each label with its timestamp:')
+      ..writeln('- Hook (0-6s) — deliver a bold opener that makes $topic impossible to ignore right now.')
+      ..writeln('- Spark (6-12s) — explain the catalyst or stakes that keep the viewer leaning in.')
+      ..writeln('- Proof (12-18s) — present the evidence, stat, or lived moment that makes the story undeniable.')
+      ..writeln('- Turn (18-24s) — pivot toward the hopeful path forward and show who is already driving it.')
+      ..writeln('- Final CTA (24-30s) — land the CTA with urgency, clarity, and emotional payoff.')
+      ..writeln()
+      ..writeln('For each beat, output exactly this format:')
+      ..writeln('**Hook (0-6s):**')
+      ..writeln('Voiceover: <3-4 sentences, 35-45 words, propelling the story forward with vivid specificity>')
+      ..writeln('Visuals: <one dynamic sentence suggesting kinetic supporting footage>');
 
-    if (searchFacts.isNotEmpty) {
+    if (cleanedFacts.isNotEmpty) {
       buffer.writeln('\nWeave in and paraphrase relevant details from:');
-      for (final String fact in searchFacts) {
+      for (final String fact in cleanedFacts) {
         buffer.writeln('- $fact');
       }
     }
 
     buffer
-      ..writeln('Avoid repeating the same opening words (for example, do not rely on "imagine" repeatedly).')
-      ..writeln('Return only the formatted beats in plain text, matching the template headings.');
+      ..writeln()
+      ..writeln('Guidelines:')
+      ..writeln('- Create a seamless narrative arc where every beat references or escalates the one before it.')
+      ..writeln('- Use sharp humor, puns, and fluid metaphors tailored to the topic without repeating opening words.')
+      ..writeln('- Voiceover must flow as complete sentences; avoid bullet fragments.')
+      ..writeln('- Visuals should suggest clear, vivid shots or actions that match the voiceover.')
+      ..writeln('- Never mention on-screen text or captions.')
+      ..writeln('- $factsInstruction')
+      ..writeln(hasExplicitStyle
+          ? '- Match that tone in every beat without drifting.'
+          : '- Keep it quick, warm, and just mischievous enough to stay memorable.')
+      ..writeln('- If a CTA is provided, weave it naturally into the Final CTA beat; otherwise invent a specific, time-bound action.');
 
     return buffer.toString();
   }
@@ -150,7 +173,6 @@ class LocalLlmService {
     required String style,
     required List<String> searchFacts,
   }) {
-    const int beatDuration = 4;
     final String toneDescriptor = (() {
       final String normalized = style.trim().toLowerCase();
       switch (normalized) {
@@ -170,18 +192,11 @@ class LocalLlmService {
           return 'bold';
       }
     })();
-    final int segmentCount = max(1, (length / beatDuration).ceil());
-    final int twistIndex = segmentCount > 2 ? segmentCount ~/ 2 : segmentCount - 1;
-
+    final int segmentCount = _fallbackBeatPlan.length;
     final List<Map<String, dynamic>> segments = <Map<String, dynamic>>[];
-    final List<String> facts = <String>[];
-    for (final String raw in searchFacts) {
-      facts.addAll(_expandFacts(raw));
-    }
-
-    if (facts.isEmpty && searchFacts.isNotEmpty) {
-      facts.addAll(searchFacts);
-    }
+    final List<String> facts = _prepareFacts(searchFacts);
+    final List<String> prioritizedFacts = _prioritizeFacts(facts);
+    int factCursor = 0;
 
     String _titleCaseTopic(String value) {
       if (value.trim().isEmpty) {
@@ -195,122 +210,181 @@ class LocalLlmService {
     }
 
     final String topicTitle = _titleCaseTopic(topic);
-    final String topicDisplay = topic.trim().isEmpty ? topicTitle : topic.trim();
 
-    String humanizeFact(String factLine) {
-      String cleaned = factLine.trim();
-      if (cleaned.isEmpty) {
-        return 'Highlight how $topicDisplay is already showing up in real life right now.';
+    String _sanitizeTopicDisplay(String raw, String fallback) {
+      final String trimmed = raw.trim();
+      if (trimmed.isEmpty) {
+        return fallback;
       }
-      cleaned = cleaned.replaceAll(RegExp(r'\s+'), ' ').trim();
-      if (!cleaned.endsWith('.')) {
-        cleaned = '$cleaned.';
+      final String singleLine = trimmed.split(RegExp(r'[\r\n]+')).first;
+      String cleaned = singleLine.replaceFirst(
+        RegExp(r'^\s*[-–—•]*\s*(?:\(?\d+[.)]\s*)?'),
+        '',
+      );
+      if (cleaned.isEmpty) {
+        cleaned = fallback;
+      }
+      const int maxLength = 120;
+      if (cleaned.length > maxLength) {
+        cleaned = cleaned.substring(0, maxLength).trimRight();
+        if (!cleaned.endsWith('…')) {
+          cleaned = '$cleaned…';
+        }
       }
       return cleaned;
     }
 
+    final String topicDisplay = _sanitizeTopicDisplay(topic, topicTitle);
+
+    String? nextFact() {
+      if (prioritizedFacts.isEmpty) {
+        return null;
+      }
+      if (factCursor < prioritizedFacts.length) {
+        return prioritizedFacts[factCursor++];
+      }
+      return null;
+    }
+
+    String _ensureSentence(String raw) {
+      final String trimmed = raw.trim();
+      if (trimmed.isEmpty) {
+        return '';
+      }
+      final String normalized = trimmed.replaceAll(RegExp(r'\s+'), ' ');
+      final String last = normalized[normalized.length - 1];
+      return '.!?'.contains(last) ? normalized : '$normalized.';
+    }
+
+    String? buildFactPrompt({
+      String? factLine,
+      required bool allowTopicFallback,
+    }) {
+      final String cleaned = _cleanFact(factLine ?? '');
+      if (cleaned.isNotEmpty) {
+        return cleaned;
+      }
+      if (allowTopicFallback) {
+        return 'Show people this is already happening on the ground.';
+      }
+      return null;
+    }
+
     String buildVoiceover({
+      required _FallbackBeat beat,
       required bool isFirst,
       required bool isLast,
       required int index,
-      required String factPrompt,
+      String? factPrompt,
       required String topicDisplay,
       required String toneDescriptor,
     }) {
-      final List<String> firstHooks = <String>[
-        'Open with a $toneDescriptor jolt so $topicDisplay feels urgent enough to stop the scroll.',
-        'Drop the viewer right in: $topicDisplay is already rewriting what they thought was settled.',
-      ];
-      final List<String> midHooks = <String>[
-        'Show how $topicDisplay keeps gaining ground from one ordinary moment to the next.',
-        'Let the viewer feel the momentum building as $topicDisplay gathers allies.',
-        'Reveal the angle people miss when they only skim headlines about $topicDisplay.',
-      ];
-      final List<String> lastHooks = <String>[
-        'Stick the landing with that same $toneDescriptor energy and make $topicDisplay impossible to ignore.',
-        'Bring it home so $topicDisplay becomes the decision they have to make next.',
-      ];
-      final List<String> detailPrompts = <String>[
-        'Here’s what it looks like on the ground: $factPrompt',
-        'Make it feel personal with a quick win: $factPrompt',
-        'Share the proof so it sticks: $factPrompt',
-      ];
-      final List<String> genericDetails = <String>[
-        'Drop in a concrete, human-sized example that proves $topicDisplay isn’t abstract.',
-        'Give them one vivid moment they can picture happening on their own block because of $topicDisplay.',
-        'Paint a fast scene that turns $topicDisplay into something they can feel.',
-      ];
-      final List<String> midClosers = <String>[
-        'Challenge the viewer to picture what changes tonight if they stay with you.',
-        'Promise the next beat uncovers the part no one else is saying out loud.',
-        'Show what it costs to look away for even one more day.',
-      ];
-      final List<String> finalClosers = <String>[
-        'Make the stakes explicit and invite them to move before the moment passes.',
-        'Spell out how their next decision becomes the turning point.',
-      ];
+      final bool hasFact = (factPrompt ?? '').trim().isNotEmpty;
+      final List<String> sentences = <String>[];
 
-      final List<String> twistHooks = <String>[
-        'Pause on the doubt people whisper about $topicDisplay and call it out directly.',
-        'Acknowledge the skeptic in the room so $topicDisplay feels impossible to ignore.',
-      ];
-      final List<String> twistClosers = <String>[
-        'Flip that hesitation into a reason the viewer leans in.',
-        'Answer the doubt with a believable scenario that still keeps the energy high.',
-      ];
+      String factHighlight(String prefix) {
+        if (!hasFact) {
+          return '';
+        }
+        return _ensureSentence('$prefix ${factPrompt!.trim()}');
+      }
 
-      final String hook = isFirst
-          ? firstHooks[index % firstHooks.length]
-          : isLast
-              ? lastHooks[index % lastHooks.length]
-              : (index == twistIndex
-                  ? twistHooks[index % twistHooks.length]
-                  : midHooks[index % midHooks.length]);
+      switch (beat.label) {
+        case 'Hook':
+          sentences.add(_ensureSentence(
+            'Hit the feed with a $toneDescriptor first line so $topicDisplay feels like breaking news, not background noise',
+          ));
+          final String factLine = factHighlight('Lead with the jaw-dropping proof:');
+          if (factLine.isNotEmpty) {
+            sentences.add(factLine);
+          }
+          sentences.add(_ensureSentence('Leave them hanging on a question the next beat must answer'));
+          break;
+        case 'Spark':
+          sentences.add(_ensureSentence(
+            'Name the spark that proves this story is unfolding right now—who lit the fuse and why it matters tonight',
+          ));
+          final String factLine = factHighlight('Spell out the stakes they probably have not heard:');
+          if (factLine.isNotEmpty) {
+            sentences.add(factLine);
+          }
+          sentences.add(_ensureSentence('Make the viewer feel the stakes tightening without losing momentum'));
+          break;
+        case 'Proof':
+          sentences.add(_ensureSentence(
+            'Drop the receipts that lock the narrative in place: show what changed, who felt it, and how big the shift really is',
+          ));
+          final String factLine = factHighlight('Quote the evidence straight:');
+          if (factLine.isNotEmpty) {
+            sentences.add(factLine);
+          }
+          sentences.add(_ensureSentence('Tie the evidence straight back to the spark so the arc stays seamless'));
+          break;
+        case 'Turn':
+          sentences.add(_ensureSentence(
+            'Show the pivot—people flipping frustration into forward motion and inviting the viewer into that turn',
+          ));
+          final String factLine = factHighlight('Point to the momentum that proves the turn is real:');
+          if (factLine.isNotEmpty) {
+            sentences.add(factLine);
+          }
+          sentences.add(_ensureSentence('Set up the CTA by hinting at what scales if more of us join in'));
+          break;
+        case 'Final CTA':
+          sentences.add(_ensureSentence(
+            'Deliver the CTA like a payoff: spell out the action, the urgency, and the emotional win for taking it now',
+          ));
+          final String factLine = factHighlight('Remind them what is on the line:');
+          if (factLine.isNotEmpty) {
+            sentences.add(factLine);
+          }
+          sentences.add(_ensureSentence('Close with a vivid image or promise that sticks after the video ends'));
+          break;
+        default:
+          final String factLine = factHighlight('Consider this detail:');
+          if (factLine.isNotEmpty) {
+            sentences.add(factLine);
+          }
+          break;
+      }
 
-      final String detail = factPrompt.isEmpty
-          ? genericDetails[index % genericDetails.length]
-          : detailPrompts[index % detailPrompts.length];
-
-      final String closer = isLast
-          ? finalClosers[index % finalClosers.length]
-          : (index == twistIndex
-              ? twistClosers[index % twistClosers.length]
-              : midClosers[index % midClosers.length]);
-
-      return '$hook $detail $closer';
+      return sentences.where((String value) => value.trim().isNotEmpty).join(' ');
     }
 
     String buildVisuals({
+      required _FallbackBeat beat,
       required bool isFirst,
       required bool isLast,
       required int index,
     }) {
-      if (isFirst) {
-        return 'Open with a fast push-in on a worried face or headline screenshot, then cut to kinetic footage that makes the stakes feel immediate.';
+      switch (beat.label) {
+        case 'Hook':
+          return 'Open with a kinetic montage of headlines and close-up reactions that capture the jolt instantly.';
+        case 'Spark':
+          return 'Cut into the catalyst—hands on the problem, text threads lighting up, the moment momentum catches.';
+        case 'Proof':
+          return 'Layer receipts: split screens of data, documentary textures, or on-the-ground testimonies synced to the stat.';
+        case 'Turn':
+          return 'Show the pivot in action—neighbors linking arms, organizers planning, solutions already moving.';
+        case 'Final CTA':
+          return 'Close on a bold action tableau: a direct-to-camera appeal, on-screen sign-ups, or crowds moving with purpose.';
+        default:
+          return 'Keep the pace moving with handheld crowd shots and quick reaction cutaways; go tight on faces that show exactly what’s at stake.';
       }
-      if (isLast) {
-        return 'Layer a tight shot on the speaker with bold motion graphics flashing the next step, then land on a motivating action moment that invites the viewer to move.';
-      }
-      final List<String> midVisuals = <String>[
-        'Keep the pace moving with handheld crowd shots and quick reaction cutaways; go tight on faces that show exactly what’s at stake.',
-        'Track the problem over shoulders or screens so the viewer experiences it in real time, then jump to the fallout.',
-        'Use dynamic B-roll that swings from wide context to razor-sharp details, matching each cut to the emotional shift in the voiceover.',
-      ];
-      return midVisuals[index % midVisuals.length];
     }
 
     for (int i = 0; i < segmentCount; i++) {
-      final int start = i * beatDuration;
-      final int end = i == segmentCount - 1 ? length : min(length, start + beatDuration);
+      final _FallbackBeat beat = _fallbackBeatPlan[i];
       final bool isFirst = i == 0;
       final bool isLast = i == segmentCount - 1;
-      final String factLine =
-          i < facts.length
-              ? facts[i]
-              : 'Surface a quick proof point about $topicDisplay.';
-      final String factPrompt = humanizeFact(factLine);
+      final String? selectedFact = beat.highlightFact ? nextFact() : null;
+      final String? factPrompt = buildFactPrompt(
+        factLine: selectedFact,
+        allowTopicFallback: beat.fallbackToTopic,
+      );
 
       final String voiceover = buildVoiceover(
+        beat: beat,
         isFirst: isFirst,
         isLast: isLast,
         index: i,
@@ -320,19 +394,17 @@ class LocalLlmService {
       );
 
       final String visuals = buildVisuals(
+        beat: beat,
         isFirst: isFirst,
         isLast: isLast,
         index: i,
       );
 
-      final List<String> labels = <String>['[hook]', '[next beat]', '[next beat]', '[twist]', '[payoff/CTA]'];
-      final String label = labels[min(i, labels.length - 1)];
-
       segments.add(<String, dynamic>{
-        'startTime': start,
-        'endTime': end,
+        'startTime': beat.start,
+        'endTime': beat.end,
         'voiceover': voiceover,
-        'onScreenText': label,
+        'onScreenText': beat.label,
         'visualsActions': visuals,
       });
     }
@@ -354,7 +426,7 @@ class LocalLlmService {
       searchFacts: searchFacts ?? <String>[],
     );
     final List<ScriptSegment> segments =
-        _parseSegments(rawJson, length);
+        _parseSegments(rawJson, _fallbackTotalLength);
     if (segments.isNotEmpty) {
       final ScriptSegment last = segments.last;
       final String trimmedCta = cta?.trim() ?? '';
@@ -382,6 +454,73 @@ class LocalLlmService {
       _interpreter!.close();
       _interpreter = null;
     }
+  }
+
+  static List<String> _prepareFacts(List<String> rawFacts) {
+    final LinkedHashSet<String> dedup = LinkedHashSet<String>();
+    for (final String raw in rawFacts) {
+      for (final String expanded in _expandFacts(raw)) {
+        final String cleaned = _cleanFact(expanded);
+        if (cleaned.isNotEmpty) {
+          dedup.add(cleaned);
+        }
+      }
+    }
+
+    if (dedup.isEmpty) {
+      for (final String fallback in rawFacts) {
+        final String cleaned = _cleanFact(fallback);
+        if (cleaned.isNotEmpty) {
+          dedup.add(cleaned);
+        }
+      }
+    }
+
+    return dedup.toList(growable: false);
+  }
+
+  static List<String> _prioritizeFacts(List<String> facts) {
+    if (facts.isEmpty) {
+      return <String>[];
+    }
+
+    const int maxFacts = 6;
+    final RegExp numeric = RegExp(r'\d');
+    final List<String> prioritized = <String>[];
+
+    for (final String fact in facts) {
+      if (numeric.hasMatch(fact) && prioritized.length < maxFacts) {
+        prioritized.add(fact);
+      }
+    }
+
+    if (prioritized.length < maxFacts) {
+      for (final String fact in facts) {
+        if (!prioritized.contains(fact)) {
+          prioritized.add(fact);
+          if (prioritized.length >= maxFacts) {
+            break;
+          }
+        }
+      }
+    }
+
+    return prioritized;
+  }
+
+  static String _cleanFact(String fact) {
+    String normalized = fact
+        .replaceAll(RegExp(r'[\uFFFC\uFFFD]'), ' ')
+        .replaceFirst(RegExp(r'^\s*[-–—•]*\s*(?:\(?\d+[.)]\s*)?'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    if (normalized.isEmpty) {
+      return '';
+    }
+    if (!normalized.endsWith('.')) {
+      normalized = '$normalized.';
+    }
+    return normalized;
   }
 
   static List<String> _expandFacts(String raw) {
@@ -440,17 +579,20 @@ class LocalLlmService {
         return <ScriptSegment>[];
       }
 
-      const int beatDuration = 4;
       final List<Map<String, dynamic>> typedSegments =
           segmentList.whereType<Map<String, dynamic>>().toList();
-      final int expectedSegments = max(1, (length / beatDuration).ceil());
+      final int expectedSegments = _fallbackBeatPlan.length;
 
       final List<ScriptSegment> scriptSegments = <ScriptSegment>[];
 
       for (int i = 0; i < typedSegments.length; i++) {
         final Map<String, dynamic> segment = typedSegments[i];
+        final _FallbackBeat defaultBeat =
+            i < _fallbackBeatPlan.length
+                ? _fallbackBeatPlan[i]
+                : _fallbackBeatPlan.last;
         final int startTime =
-            _coerceStartTime(segment['startTime'], i * beatDuration);
+            _coerceStartTime(segment['startTime'], defaultBeat.start);
         final String voiceover = segment['voiceover']?.toString().trim() ?? '';
         final String onScreenText =
             segment['onScreenText']?.toString().trim() ?? '';
@@ -463,7 +605,7 @@ class LocalLlmService {
 
         final int rawEndTime = _coerceStartTime(
           segment['endTime'],
-          startTime + beatDuration,
+          defaultBeat.end,
         );
         final int clampedEnd = max(startTime + 1, min(length, rawEndTime));
 
@@ -472,7 +614,7 @@ class LocalLlmService {
             startTime: startTime,
             endTime: clampedEnd,
             voiceover: voiceover,
-            onScreenText: onScreenText,
+            onScreenText: onScreenText.isEmpty ? defaultBeat.label : onScreenText,
             visualsActions: visualsActions,
           ),
         );
@@ -512,4 +654,22 @@ class LocalLlmService {
     final String lower = trimmed.toLowerCase();
     return 'Give them a next step: share this with someone you trust and agree on one action to take today about $lower.';
   }
+}
+
+class _FallbackBeat {
+  final String label;
+  final int start;
+  final int end;
+  final bool highlightFact;
+  final bool fallbackToTopic;
+
+  const _FallbackBeat({
+    required this.label,
+    required this.start,
+    required this.end,
+    this.highlightFact = false,
+    this.fallbackToTopic = false,
+  });
+
+  String get normalizedRange => '${start}-${end}s';
 }

@@ -14,8 +14,9 @@ void main() {
     );
 
     expect(script, isNotEmpty);
-    final int expectedBeats = (30 / 4).ceil();
-    final Iterable<Match> beats = RegExp(r'(?:\*\*)?\d+-\d+s:(?:\*\*)?')
+    const int expectedBeats = 5;
+    final Iterable<Match> beats =
+        RegExp(r'\*\*[^*]+\(\d+-\d+s\):\*\*')
         .allMatches(script);
     expect(beats.length, greaterThanOrEqualTo(expectedBeats));
     expect(script.toLowerCase().contains('dogs'), isTrue);
