@@ -112,6 +112,20 @@ class _ConfigScreenState extends State<ConfigScreen>
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final ButtonStyle? primaryButtonStyle = theme.elevatedButtonTheme.style?.copyWith(
+      overlayColor: MaterialStateProperty.resolveWith<Color?>(
+        (Set<MaterialState> states) {
+          if (states.contains(MaterialState.hovered) ||
+              states.contains(MaterialState.focused)) {
+            return theme.colorScheme.onPrimary.withOpacity(0.10);
+          }
+          if (states.contains(MaterialState.pressed)) {
+            return theme.colorScheme.onPrimary.withOpacity(0.16);
+          }
+          return null;
+        },
+      ),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -128,7 +142,7 @@ class _ConfigScreenState extends State<ConfigScreen>
         controller: _tabController,
         children: <Widget>[
           SafeArea(
-            child: SingleChildScrollView(
+            child: Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
               child: Form(
@@ -136,48 +150,84 @@ class _ConfigScreenState extends State<ConfigScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-                    TextFormField(
-                      controller: _topicController,
-                      keyboardType: TextInputType.multiline,
-                      minLines: 3,
-                      maxLines: 6,
-                      decoration: const InputDecoration(
-                        labelText: 'What’s the big idea?',
-                        hintText:
-                            'Share the key issue driving this campaign—whether it’s something personal, policy-focused, or a response to recent events.',
-                      ),
-                      validator: (String? value) =>
-                          (value == null || value.trim().isEmpty)
-                              ? 'Please describe the payoff or topic.'
-                              : null,
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _ctaController,
-                      decoration: const InputDecoration(
-                        labelText: 'Final call to action (optional)',
-                        hintText: 'Make a plan to vote at vote.org',
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    DropdownButtonFormField<String>(
-                      initialValue: _style,
-                      items: const <DropdownMenuItem<String>>[
-                        DropdownMenuItem(
-                            value: 'Educational', child: Text('Educational')),
-                        DropdownMenuItem(value: 'Motivational', child: Text('Motivational')),
-                        DropdownMenuItem(value: 'Comedy', child: Text('Comedy')),
-                        DropdownMenuItem(value: 'Other', child: Text('Other')),
-                      ],
-                      decoration: const InputDecoration(
-                        labelText: 'Style (optional)',
-                      ),
-                      onChanged: (String? value) => setState(
-                        () => _style = value ?? 'Educational',
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: <Widget>[
+                            Text(
+                              'This tool turns key facts into viral scripts for any cause. Just gather 5–7 powerful stats, quotes, or insights tied to trends, impact, or common myths.',
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                            const SizedBox(height: 20),
+                            TextFormField(
+                              controller: _topicController,
+                              keyboardType: TextInputType.multiline,
+                              minLines: 6,
+                              maxLines: 10,
+                              decoration: const InputDecoration(
+                                labelText: 'Your big idea or topic',
+                                hintText: 'Write or paste here',
+                              ),
+                              validator: (String? value) =>
+                                  (value == null || value.trim().isEmpty)
+                                      ? 'Please describe the payoff or topic.'
+                                      : null,
+                            ),
+                            const SizedBox(height: 20),
+                            TextFormField(
+                              controller: _ctaController,
+                              keyboardType: TextInputType.multiline,
+                              minLines: 2,
+                              maxLines: 5,
+                              decoration: const InputDecoration(
+                                labelText: 'Final call to action (optional)',
+                                hintText: 'e.g. Make a plan to vote at vote.org',
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            DropdownButtonFormField<String>(
+                              initialValue: _style,
+                              items: const <DropdownMenuItem<String>>[
+                                DropdownMenuItem(
+                                    value: 'Educational', child: Text('Educational')),
+                                DropdownMenuItem(
+                                    value: 'Motivational', child: Text('Motivational')),
+                                DropdownMenuItem(value: 'Comedy', child: Text('Comedy')),
+                                DropdownMenuItem(value: 'Other', child: Text('Other')),
+                              ],
+                              decoration: const InputDecoration(
+                                labelText: 'Style (optional)',
+                              ),
+                              onChanged: (String? value) => setState(
+                                () => _style = value ?? 'Educational',
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Center(
+                              child: TextButton(
+                                onPressed: _isSubmitting
+                                    ? null
+                                    : () {
+                                        _topicController.clear();
+                                        _ctaController.clear();
+                                        setState(() => _style = 'Educational');
+                                      },
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  foregroundColor:
+                                      theme.colorScheme.primary.withOpacity(0.8),
+                                ),
+                                child: const Text('Reset form'),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 32),
                     ElevatedButton(
+                      style: primaryButtonStyle,
                       onPressed: _isSubmitting ? null : _generateScript,
                       child: _isSubmitting
                           ? const SizedBox(
@@ -210,6 +260,13 @@ class _ConfigScreenState extends State<ConfigScreen>
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
+                        Text(
+                          'AI can hallucinate—always check the facts before sharing.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
                         Expanded(
                           child: DecoratedBox(
                             decoration: BoxDecoration(
@@ -241,7 +298,7 @@ class _ConfigScreenState extends State<ConfigScreen>
                                       ),
                                       blockquotePadding:
                                           const EdgeInsets.symmetric(horizontal: 12)
-                                              .copyWith(top: 4, bottom: 4),
+                                              .copyWith(top: 4, bottom: 2),
                                       blockquoteDecoration: BoxDecoration(
                                         border: Border( left: BorderSide(
                                           color: theme.colorScheme.onSurface
@@ -256,11 +313,6 @@ class _ConfigScreenState extends State<ConfigScreen>
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () => _copyScript(context, _generatedScript!),
-                          child: const Text('Copy script'),
-                        ),
                         if (!_usedHostedGenerator) ...<Widget>[
                           const SizedBox(height: 12),
                           Align(
@@ -274,6 +326,12 @@ class _ConfigScreenState extends State<ConfigScreen>
                             ),
                           ),
                         ],
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          style: primaryButtonStyle,
+                          onPressed: () => _copyScript(context, _generatedScript!),
+                          child: const Text('Copy script'),
+                        ),
                       ],
                     ),
             ),

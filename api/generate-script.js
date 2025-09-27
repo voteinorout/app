@@ -61,7 +61,7 @@ Return only the formatted beats in plain text.`;
       model: 'gpt-4o',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 900,
-      temperature: 0.8,
+      temperature: 0.6,
     });
 
     res.status(200).json({ text: completion.choices[0].message.content });
