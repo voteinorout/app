@@ -112,6 +112,20 @@ class _ConfigScreenState extends State<ConfigScreen>
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+    final ButtonStyle? primaryButtonStyle = theme.elevatedButtonTheme.style?.copyWith(
+      overlayColor: MaterialStateProperty.resolveWith<Color?>(
+        (Set<MaterialState> states) {
+          if (states.contains(MaterialState.hovered) ||
+              states.contains(MaterialState.focused)) {
+            return theme.colorScheme.onPrimary.withOpacity(0.10);
+          }
+          if (states.contains(MaterialState.pressed)) {
+            return theme.colorScheme.onPrimary.withOpacity(0.16);
+          }
+          return null;
+        },
+      ),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -128,7 +142,7 @@ class _ConfigScreenState extends State<ConfigScreen>
         controller: _tabController,
         children: <Widget>[
           SafeArea(
-            child: SingleChildScrollView(
+            child: Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
               child: Form(
@@ -136,56 +150,66 @@ class _ConfigScreenState extends State<ConfigScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-                    Text(
-                      'This tool turns key facts into viral scripts for any cause. Just gather 5–7 powerful stats, quotes, or insights tied to trends, impact, or common myths.',
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _topicController,
-                      keyboardType: TextInputType.multiline,
-                      minLines: 6,
-                      maxLines: 15,
-                      decoration: const InputDecoration(
-                        labelText: 'Your big idea or topic',
-                        hintText:
-                            'Write or paste here',
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: <Widget>[
+                            Text(
+                              'This tool turns key facts into viral scripts for any cause. Just gather 5–7 powerful stats, quotes, or insights tied to trends, impact, or common myths.',
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                            const SizedBox(height: 20),
+                            TextFormField(
+                              controller: _topicController,
+                              keyboardType: TextInputType.multiline,
+                              minLines: 6,
+                              maxLines: 10,
+                              decoration: const InputDecoration(
+                                labelText: 'Your big idea or topic',
+                                hintText: 'Write or paste here',
+                              ),
+                              validator: (String? value) =>
+                                  (value == null || value.trim().isEmpty)
+                                      ? 'Please describe the payoff or topic.'
+                                      : null,
+                            ),
+                            const SizedBox(height: 20),
+                            TextFormField(
+                              controller: _ctaController,
+                              keyboardType: TextInputType.multiline,
+                              minLines: 2,
+                              maxLines: 5,
+                              decoration: const InputDecoration(
+                                labelText: 'Final call to action (optional)',
+                                hintText: 'e.g. Make a plan to vote at vote.org',
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            DropdownButtonFormField<String>(
+                              initialValue: _style,
+                              items: const <DropdownMenuItem<String>>[
+                                DropdownMenuItem(
+                                    value: 'Educational', child: Text('Educational')),
+                                DropdownMenuItem(
+                                    value: 'Motivational', child: Text('Motivational')),
+                                DropdownMenuItem(value: 'Comedy', child: Text('Comedy')),
+                                DropdownMenuItem(value: 'Other', child: Text('Other')),
+                              ],
+                              decoration: const InputDecoration(
+                                labelText: 'Style (optional)',
+                              ),
+                              onChanged: (String? value) => setState(
+                                () => _style = value ?? 'Educational',
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      validator: (String? value) =>
-                          (value == null || value.trim().isEmpty)
-                              ? 'Please describe the payoff or topic.'
-                              : null,
                     ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _ctaController,
-                      keyboardType: TextInputType.multiline,
-                      minLines: 2,
-                      maxLines: 10,
-                      decoration: const InputDecoration(
-                        labelText: 'Final call to action (optional)',
-                        hintText: 'e.g. Make a plan to vote at vote.org',
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    DropdownButtonFormField<String>(
-                      initialValue: _style,
-                      items: const <DropdownMenuItem<String>>[
-                        DropdownMenuItem(
-                            value: 'Educational', child: Text('Educational')),
-                        DropdownMenuItem(value: 'Motivational', child: Text('Motivational')),
-                        DropdownMenuItem(value: 'Comedy', child: Text('Comedy')),
-                        DropdownMenuItem(value: 'Other', child: Text('Other')),
-                      ],
-                      decoration: const InputDecoration(
-                        labelText: 'Style (optional)',
-                      ),
-                      onChanged: (String? value) => setState(
-                        () => _style = value ?? 'Educational',
-                      ),
-                    ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
                     ElevatedButton(
+                      style: primaryButtonStyle,
                       onPressed: _isSubmitting ? null : _generateScript,
                       child: _isSubmitting
                           ? const SizedBox(
@@ -279,6 +303,7 @@ class _ConfigScreenState extends State<ConfigScreen>
                         ],
                         const SizedBox(height: 16),
                         ElevatedButton(
+                          style: primaryButtonStyle,
                           onPressed: () => _copyScript(context, _generatedScript!),
                           child: const Text('Copy script'),
                         ),
