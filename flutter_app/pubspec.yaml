@@ -4,15 +4,14 @@ publish_to: 'none'
 version: 0.0.1
 
 environment:
-  sdk: '>=3.3.0 <4.0.0'
+  sdk: '>=3.9.0 <4.0.0'
+  flutter: '>=3.35.4'
 
 dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.2
   http: ^1.2.0  # For OpenAI API calls
-  speech_to_text: ^7.3.0  # For local transcription
-  just_audio: ^0.10.5  # Playback for feeding audio into speech recognizer
   tflite_flutter: ^0.11.0  # Local LLM fallback inference
   flutter_svg: 2.0.7  # Render SVG assets such as the splash logo
   flutter_markdown: ^0.6.17  # Render formatted script output

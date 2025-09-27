@@ -239,8 +239,10 @@ class ScriptGenerator {
         final String rest = timeMatch.group(3)?.trimLeft() ?? '';
         final String cleanedRest = rest.replaceFirst(RegExp(r'^\[[^\]]+\]\s*'), '');
         final String suffix = cleanedRest.isEmpty ? '' : ' $cleanedRest';
-        final _BeatSlot slot = _beatSlots
-            .firstWhere((_) => _.matchesRange(range), orElse: () => _BeatSlot.fallback(range));
+        final _BeatSlot slot = _beatSlots.firstWhere(
+          (candidate) => candidate.matchesRange(range),
+          orElse: () => _BeatSlot.fallback(range),
+        );
         formatted.add('$prefix**${slot.label} (${slot.rangeString}):**$suffix');
       } else {
         formatted.add(line);
