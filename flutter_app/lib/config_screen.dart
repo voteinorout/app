@@ -136,15 +136,20 @@ class _ConfigScreenState extends State<ConfigScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
+                    Text(
+                      'This tool turns key facts into viral scripts for any cause. Just gather 5–7 powerful stats, quotes, or insights tied to trends, impact, or common myths.',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 20),
                     TextFormField(
                       controller: _topicController,
                       keyboardType: TextInputType.multiline,
-                      minLines: 3,
-                      maxLines: 6,
+                      minLines: 6,
+                      maxLines: 15,
                       decoration: const InputDecoration(
-                        labelText: 'What’s the big idea?',
+                        labelText: 'Your big idea or topic',
                         hintText:
-                            'Share the key issue driving this campaign—whether it’s something personal, policy-focused, or a response to recent events.',
+                            'Write or paste here',
                       ),
                       validator: (String? value) =>
                           (value == null || value.trim().isEmpty)
@@ -154,9 +159,12 @@ class _ConfigScreenState extends State<ConfigScreen>
                     const SizedBox(height: 20),
                     TextFormField(
                       controller: _ctaController,
+                      keyboardType: TextInputType.multiline,
+                      minLines: 2,
+                      maxLines: 10,
                       decoration: const InputDecoration(
                         labelText: 'Final call to action (optional)',
-                        hintText: 'Make a plan to vote at vote.org',
+                        hintText: 'e.g. Make a plan to vote at vote.org',
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -256,11 +264,6 @@ class _ConfigScreenState extends State<ConfigScreen>
                             ),
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () => _copyScript(context, _generatedScript!),
-                          child: const Text('Copy script'),
-                        ),
                         if (!_usedHostedGenerator) ...<Widget>[
                           const SizedBox(height: 12),
                           Align(
@@ -274,6 +277,11 @@ class _ConfigScreenState extends State<ConfigScreen>
                             ),
                           ),
                         ],
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () => _copyScript(context, _generatedScript!),
+                          child: const Text('Copy script'),
+                        ),
                       ],
                     ),
             ),
