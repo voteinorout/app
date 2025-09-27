@@ -2,20 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:vioo_app/services/remote/proxy_config.dart';
-import 'package:vioo_app/services/transcription_service.dart';
 import 'config_screen.dart';
 import 'home_screen.dart';
 import 'script_screen.dart';
-import 'transcription_screen.dart';
 
 const String _scriptProxyEndpoint = ProxyConfig.scriptProxyEndpoint;
-
-// Running full `TranscriptionService.init()` during startup blocks the first
-// frame while iOS/Android show the microphone permission dialog.  Enable this
-// flag when you explicitly want to exercise transcription workflows on app
-// launch.
-const bool _eagerSpeechInit =
-    bool.fromEnvironment('EAGER_SPEECH_INIT', defaultValue: false);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,9 +14,6 @@ Future<void> main() async {
     debugPrint(
       'SCRIPT_PROXY_ENDPOINT missing. Provide it via --dart-define to enable hosted script generation.',
     );
-  }
-  if (_eagerSpeechInit) {
-    await TranscriptionService.init();
   }
   runApp(const VoteInOrOutApp());
 }
@@ -139,7 +127,6 @@ class VoteInOrOutApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(),
         '/config': (context) => const ConfigScreen(),
         '/script': (context) => const ScriptScreen(),
-        '/transcription': (context) => const TranscriptionScreen(),
       },
     );
   }

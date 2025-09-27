@@ -165,6 +165,7 @@ class _ConfigScreenState extends State<ConfigScreen>
                               keyboardType: TextInputType.multiline,
                               minLines: 6,
                               maxLines: 10,
+                              style: theme.textTheme.bodyMedium,
                               decoration: const InputDecoration(
                                 labelText: 'Your big idea or topic',
                                 hintText: 'Write or paste here',
@@ -180,6 +181,7 @@ class _ConfigScreenState extends State<ConfigScreen>
                               keyboardType: TextInputType.multiline,
                               minLines: 2,
                               maxLines: 5,
+                              style: theme.textTheme.bodyMedium,
                               decoration: const InputDecoration(
                                 labelText: 'Final call to action (optional)',
                                 hintText: 'e.g. Make a plan to vote at vote.org',
@@ -199,6 +201,7 @@ class _ConfigScreenState extends State<ConfigScreen>
                               decoration: const InputDecoration(
                                 labelText: 'Style (optional)',
                               ),
+                              style: theme.textTheme.bodyMedium,
                               onChanged: (String? value) => setState(
                                 () => _style = value ?? 'Educational',
                               ),
