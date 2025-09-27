@@ -33,7 +33,6 @@ class _ScriptScreenState extends State<ScriptScreen> {
 
     final String script = (args['script'] as String?)?.trim() ?? '';
     final String topic = args['topic'] as String? ?? 'Topic';
-    final int length = args['length'] as int? ?? 30;
     final String style = args['style'] as String? ?? 'Any';
     final bool usedHosted = args['usedHosted'] as bool? ?? true;
 
@@ -51,7 +50,7 @@ class _ScriptScreenState extends State<ScriptScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Style: $style • Length: ${length}s',
+              'Style: $style • Format: Hook → Final CTA (30s)',
               style: theme.textTheme.bodySmall!
                   .copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.6)),
             ),

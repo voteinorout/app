@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -17,8 +15,6 @@ class _ConfigScreenState extends State<ConfigScreen>
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _ctaController = TextEditingController();
   final TextEditingController _topicController = TextEditingController();
-  final TextEditingController _lengthController =
-      TextEditingController(text: '30');
   late final ScrollController _scriptScrollController;
 
   late TabController _tabController;
@@ -38,7 +34,6 @@ class _ConfigScreenState extends State<ConfigScreen>
   void dispose() {
     _ctaController.dispose();
     _topicController.dispose();
-    _lengthController.dispose();
     _scriptScrollController.dispose();
     _tabController.dispose();
     super.dispose();
@@ -57,8 +52,7 @@ class _ConfigScreenState extends State<ConfigScreen>
       return;
     }
 
-    final int parsedLength = int.tryParse(_lengthController.text) ?? 30;
-    final int length = max(4, min(parsedLength, 90));
+    const int length = 30;
     final String selectedStyle =
         _style == 'Other' ? 'Unspecified' : _style.trim();
     final String cta = _ctaController.text.trim();
@@ -70,12 +64,6 @@ class _ConfigScreenState extends State<ConfigScreen>
     });
 
     try {
-      if (parsedLength != length) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Length capped at 90 seconds.')),
-        );
-      }
-
       final String script = await ScriptGenerator.generateScript(
         topic,
         length,
@@ -170,24 +158,6 @@ class _ConfigScreenState extends State<ConfigScreen>
                         labelText: 'Final call to action (optional)',
                         hintText: 'Make a plan to vote at vote.org',
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _lengthController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Length (seconds)',
-                        hintText: '30',
-                      ),
-                      validator: (String? value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return null;
-                        }
-                        final int? parsed = int.tryParse(value);
-                        return (parsed == null || parsed <= 0)
-                            ? 'Enter a positive number.'
-                            : null;
-                      },
                     ),
                     const SizedBox(height: 20),
                     DropdownButtonFormField<String>(
