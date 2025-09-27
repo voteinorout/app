@@ -260,6 +260,13 @@ class _ConfigScreenState extends State<ConfigScreen>
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
+                        Text(
+                          'AI can hallucinate—always check the facts before sharing.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
                         Expanded(
                           child: DecoratedBox(
                             decoration: BoxDecoration(
