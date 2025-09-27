@@ -203,11 +203,29 @@ class _ConfigScreenState extends State<ConfigScreen>
                                 () => _style = value ?? 'Educational',
                               ),
                             ),
+                            const SizedBox(height: 8),
+                            Center(
+                              child: TextButton(
+                                onPressed: _isSubmitting
+                                    ? null
+                                    : () {
+                                        _topicController.clear();
+                                        _ctaController.clear();
+                                        setState(() => _style = 'Educational');
+                                      },
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  foregroundColor:
+                                      theme.colorScheme.primary.withOpacity(0.8),
+                                ),
+                                child: const Text('Reset form'),
+                              ),
+                            ),
                           ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 32),
                     ElevatedButton(
                       style: primaryButtonStyle,
                       onPressed: _isSubmitting ? null : _generateScript,
@@ -273,7 +291,7 @@ class _ConfigScreenState extends State<ConfigScreen>
                                       ),
                                       blockquotePadding:
                                           const EdgeInsets.symmetric(horizontal: 12)
-                                              .copyWith(top: 4, bottom: 4),
+                                              .copyWith(top: 4, bottom: 2),
                                       blockquoteDecoration: BoxDecoration(
                                         border: Border( left: BorderSide(
                                           color: theme.colorScheme.onSurface
