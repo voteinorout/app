@@ -42,9 +42,9 @@ void main() {
       );
 
       expect(script.isNotEmpty, isTrue);
-      final int expectedBeats = (12 / 4).ceil();
-      final Iterable<Match> beats = RegExp(r'(?:\*\*)?\d+-\d+s:(?:\*\*)?')
-          .allMatches(script);
+      const int expectedBeats = 5;
+      final Iterable<Match> beats =
+          RegExp(r'\*\*[^*]+\(\d+-\d+s\):\*\*').allMatches(script);
       expect(beats.length, greaterThanOrEqualTo(expectedBeats));
       expect(script.toLowerCase().contains('dogs'), isTrue);
     });
