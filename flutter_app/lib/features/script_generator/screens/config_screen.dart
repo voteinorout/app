@@ -278,13 +278,6 @@ class _ConfigScreenState extends State<ConfigScreen>
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
-                        Text(
-                          'AI can hallucinate—always check the facts before sharing.',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface.withOpacity(0.6),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
                         Expanded(
                           child: DecoratedBox(
                             decoration: BoxDecoration(
@@ -302,43 +295,63 @@ class _ConfigScreenState extends State<ConfigScreen>
                                   controller: _scriptScrollController,
                                   primary: false,
                                   padding: const EdgeInsets.all(16),
-                                  child: MarkdownBody(
-                                    data: _generatedScript!,
-                                    selectable: true,
-                                    styleSheet:
-                                        MarkdownStyleSheet.fromTheme(
-                                          theme,
-                                        ).copyWith(
-                                          p: theme.textTheme.bodyMedium!
-                                              .copyWith(height: 1.4),
-                                          strong: theme.textTheme.bodyMedium!
-                                              .copyWith(
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                          blockquote: theme.textTheme.bodySmall!
-                                              .copyWith(
-                                                color: theme
-                                                    .colorScheme
-                                                    .onSurface
-                                                    .withOpacity(0.6),
-                                                height: 1.4,
-                                              ),
-                                          blockquotePadding:
-                                              const EdgeInsets.symmetric(
-                                                horizontal: 12,
-                                              ).copyWith(top: 4, bottom: 2),
-                                          blockquoteDecoration: BoxDecoration(
-                                            border: Border(
-                                              left: BorderSide(
-                                                color: theme
-                                                    .colorScheme
-                                                    .onSurface
-                                                    .withOpacity(0.12),
-                                                width: 2,
-                                              ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: <Widget>[
+                                      Text(
+                                        'AI can hallucinate—always check facts before sharing.',
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                              color: theme.colorScheme.onSurface
+                                                  .withOpacity(0.6),
                                             ),
-                                          ),
-                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      MarkdownBody(
+                                        data: _generatedScript!,
+                                        selectable: true,
+                                        styleSheet:
+                                            MarkdownStyleSheet.fromTheme(
+                                              theme,
+                                            ).copyWith(
+                                              p: theme.textTheme.bodyMedium!
+                                                  .copyWith(height: 1.4),
+                                              strong: theme
+                                                  .textTheme
+                                                  .bodyMedium!
+                                                  .copyWith(
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                              blockquote: theme
+                                                  .textTheme
+                                                  .bodySmall!
+                                                  .copyWith(
+                                                    color: theme
+                                                        .colorScheme
+                                                        .onSurface
+                                                        .withOpacity(0.6),
+                                                    height: 1.4,
+                                                  ),
+                                              blockquotePadding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                  ).copyWith(top: 4, bottom: 2),
+                                              blockquoteDecoration:
+                                                  BoxDecoration(
+                                                    border: Border(
+                                                      left: BorderSide(
+                                                        color: theme
+                                                            .colorScheme
+                                                            .onSurface
+                                                            .withOpacity(0.12),
+                                                        width: 2,
+                                                      ),
+                                                    ),
+                                                  ),
+                                            ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
