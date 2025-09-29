@@ -1,15 +1,20 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:vioo_app/features/home/screens/home_screen.dart';
 import 'package:vioo_app/features/script_generator/screens/config_screen.dart';
 import 'package:vioo_app/features/script_generator/screens/script_screen.dart';
+import 'package:vioo_app/features/script_generator/screens/saved_scripts_screen.dart';
+import 'package:vioo_app/features/script_generator/services/local/script_storage.dart';
 import 'package:vioo_app/shared/config/proxy_config.dart';
 
 const String _scriptProxyEndpoint = ProxyConfig.scriptProxyEndpoint;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+  await ScriptStorage.init();
   if (_scriptProxyEndpoint.isEmpty && kDebugMode) {
     debugPrint(
       'SCRIPT_PROXY_ENDPOINT missing. Provide it via --dart-define to enable hosted script generation.',
@@ -127,6 +132,7 @@ class VoteInOrOutApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(),
         '/config': (context) => const ConfigScreen(),
         '/script': (context) => const ScriptScreen(),
+        '/saved-scripts': (context) => const SavedScriptsScreen(),
       },
     );
   }

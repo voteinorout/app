@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:vioo_app/features/script_generator/services/remote/script_generator.dart';
+import 'package:vioo_app/features/script_generator/services/local/script_storage.dart';
 
 class ConfigScreen extends StatefulWidget {
   const ConfigScreen({super.key});
@@ -72,14 +73,41 @@ class _ConfigScreenState extends State<ConfigScreen>
         cta: cta.isEmpty ? null : cta,
       );
 
+      final String cleanedScript = script.trim();
+      final bool usedHosted = ScriptGenerator.lastRunUsedHosted;
+      bool saveFailed = false;
+
+      try {
+        await ScriptStorage.saveScript(
+          topic: topic,
+          style: selectedStyle,
+          content: cleanedScript,
+          usedHostedGenerator: usedHosted,
+        );
+      } on Object catch (error, stackTrace) {
+        saveFailed = true;
+        debugPrint('Failed to persist script locally: $error');
+        debugPrintStack(label: 'ScriptStorage failure', stackTrace: stackTrace);
+      }
+
       if (!mounted) {
         return;
       }
 
       setState(() {
-        _generatedScript = script.trim();
-        _usedHostedGenerator = ScriptGenerator.lastRunUsedHosted;
+        _generatedScript = cleanedScript;
+        _usedHostedGenerator = usedHosted;
       });
+
+      if (saveFailed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Saved copy unavailable. Script will remain until you leave this screen.',
+            ),
+          ),
+        );
+      }
 
       final String? warning = ScriptGenerator.lastRunWarning;
       if (warning != null && warning.isNotEmpty) {

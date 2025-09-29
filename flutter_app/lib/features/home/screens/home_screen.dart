@@ -107,6 +107,18 @@ class HomeScreen extends StatelessWidget {
               ),
               _featureCard(
                 context,
+                icon: Icons.folder_outlined,
+                title: 'Saved Scripts',
+                description:
+                    'Access scripts stored securely on this device—no account required.',
+                cta: 'View saved scripts',
+                onPressed: () => Navigator.pushNamed(
+                  context,
+                  '/saved-scripts',
+                ),
+              ),
+              _featureCard(
+                context,
                 icon: Icons.shield_outlined,
                 title: 'Fallacy Fighter',
                 description:
@@ -138,7 +150,7 @@ class HomeScreen extends StatelessWidget {
               Align(
                 alignment: Alignment.center,
                 child: Text(
-                  'version 1.2.11',
+                  'version 1.3.0',
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onSurface.withOpacity(0.4),
                     letterSpacing: 0.4,

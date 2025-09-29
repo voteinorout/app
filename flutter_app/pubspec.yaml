@@ -16,6 +16,8 @@ dependencies:
   flutter_svg: 2.0.7  # Render SVG assets such as the splash logo
   flutter_markdown: ^0.6.17  # Render formatted script output
   retry: ^3.1.2  # Retry utility for resilient HTTP calls
+  hive: ^2.2.3  # Local persistence for generated assets
+  hive_flutter: ^1.1.0  # Flutter bindings for Hive boxes
 
 dev_dependencies:
   flutter_test:
