@@ -23,8 +23,6 @@ class _ConfigScreenState extends State<ConfigScreen>
     'Motivational': 6,
     'Comedy': 8,
   };
-  static const int _minTemperature = 0;
-  static const int _maxTemperature = 10;
 
   late TabController _tabController;
   String _style = 'Educational';
@@ -49,19 +47,6 @@ class _ConfigScreenState extends State<ConfigScreen>
     super.dispose();
   }
 
-  int? _resolveTemperatureForStyle(String style) =>
-      _styleTemperatureDefaults[style];
-
-  String? _resolveStyleForTemperature(int temperature) {
-    for (final MapEntry<String, int> entry
-        in _styleTemperatureDefaults.entries) {
-      if (entry.value == temperature) {
-        return entry.key;
-      }
-    }
-    return null;
-  }
-
   Future<void> _generateScript() async {
     if (_isSubmitting || !_formKey.currentState!.validate()) {
       return;
@@ -76,9 +61,7 @@ class _ConfigScreenState extends State<ConfigScreen>
     }
 
     const int length = 30;
-    final String selectedStyle = _style == 'Other'
-        ? 'Unspecified'
-        : _style.trim();
+    final String selectedStyle = _style;
     final String cta = _ctaController.text.trim();
 
     setState(() {
@@ -245,106 +228,41 @@ class _ConfigScreenState extends State<ConfigScreen>
                               ),
                             ),
                             const SizedBox(height: 20),
-                            Row(
-                              children: <Widget>[
-                                Expanded(
-                                  child: InputDecorator(
-                                    decoration: const InputDecoration(
-                                      labelText: 'Style',
-                                    ),
-                                    child: DropdownButton<String>(
-                                      value: _style,
-                                      isExpanded: true,
-                                      underline: const SizedBox.shrink(),
-                                      items: const <DropdownMenuItem<String>>[
-                                        DropdownMenuItem(
-                                          value: 'Educational',
-                                          child: Text('Educational'),
-                                        ),
-                                        DropdownMenuItem(
-                                          value: 'Motivational',
-                                          child: Text('Motivational'),
-                                        ),
-                                        DropdownMenuItem(
-                                          value: 'Comedy',
-                                          child: Text('Comedy'),
-                                        ),
-                                        DropdownMenuItem(
-                                          value: 'Other',
-                                          child: Text('Other'),
-                                        ),
-                                      ],
-                                      onChanged: _isSubmitting
-                                          ? null
-                                          : (String? value) {
-                                              if (value == null) {
-                                                return;
-                                              }
-                                              setState(() {
-                                                _style = value;
-                                                final int? mapped =
-                                                    _resolveTemperatureForStyle(
-                                                      value,
-                                                    );
-                                                if (mapped != null) {
-                                                  _temperature = mapped;
-                                                }
-                                              });
-                                            },
-                                    ),
+                            InputDecorator(
+                              decoration: const InputDecoration(
+                                labelText: 'Style',
+                              ),
+                              child: DropdownButton<String>(
+                                value: _style,
+                                isExpanded: true,
+                                underline: const SizedBox.shrink(),
+                                items: const <DropdownMenuItem<String>>[
+                                  DropdownMenuItem(
+                                    value: 'Educational',
+                                    child: Text('Educational'),
                                   ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: InputDecorator(
-                                    decoration: const InputDecoration(
-                                      labelText: 'Temperature',
-                                      helperText:
-                                          'Educational → 4, Motivational → 6, Comedy → 8',
-                                    ),
-                                    child: DropdownButton<int>(
-                                      value: _temperature,
-                                      isExpanded: true,
-                                      underline: const SizedBox.shrink(),
-                                      items:
-                                          List<DropdownMenuItem<int>>.generate(
-                                            _maxTemperature -
-                                                _minTemperature +
-                                                1,
-                                            (int index) {
-                                              final int value =
-                                                  _minTemperature + index;
-                                              return DropdownMenuItem<int>(
-                                                value: value,
-                                                child: Text(value.toString()),
-                                              );
-                                            },
-                                          ),
-                                      onChanged: _isSubmitting
-                                          ? null
-                                          : (int? value) {
-                                              if (value == null) {
-                                                return;
-                                              }
-                                              setState(() {
-                                                _temperature = value;
-                                                final String? matchedStyle =
-                                                    _resolveStyleForTemperature(
-                                                      value,
-                                                    );
-                                                if (matchedStyle != null) {
-                                                  _style = matchedStyle;
-                                                } else if (_style != 'Other' &&
-                                                    _styleTemperatureDefaults
-                                                        .containsKey(_style)) {
-                                                  _style = 'Other';
-                                                }
-                                              });
-                                            },
-                                    ),
+                                  DropdownMenuItem(
+                                    value: 'Motivational',
+                                    child: Text('Motivational'),
                                   ),
-                                ),
-                              ],
+                                  DropdownMenuItem(
+                                    value: 'Comedy',
+                                    child: Text('Comedy'),
+                                  ),
+                                ],
+                                onChanged: _isSubmitting
+                                    ? null
+                                    : (String? value) {
+                                        if (value == null) {
+                                          return;
+                                        }
+                                        setState(() {
+                                          _style = value;
+                                          _temperature =
+                                              _styleTemperatureDefaults[value]!;
+                                        });
+                                      },
+                              ),
                             ),
                             const SizedBox(height: 8),
                             Center(
