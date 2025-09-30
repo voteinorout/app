@@ -20,13 +20,13 @@ jobs:
       - name: Set up Dart
         uses: dart-lang/setup-dart@v1
         with:
-          sdk: '3.3.0'
+          sdk: '3.9.2'
 
       - name: Set up Flutter (stable)
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: '3.19.0'
+          flutter-version: '3.35.4'
 
       - name: Enable Flutter (pre-cache)
         run: flutter doctor -v
@@ -77,13 +77,13 @@ jobs:
       - name: Set up Dart
         uses: dart-lang/setup-dart@v1
         with:
-          sdk: '3.3.0'
+          sdk: '3.9.2'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: '3.19.0'
+          flutter-version: '3.35.4'
 
       - name: Enable Flutter (pre-cache)
         run: flutter doctor -v
