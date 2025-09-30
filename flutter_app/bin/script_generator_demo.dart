@@ -9,6 +9,7 @@ Future<void> main() async {
     60,
     'Empowered',
     cta: 'Make a plan to vote at vote.org',
+    temperature: 6,
   );
   stdout.writeln(script);
 }

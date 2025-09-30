@@ -5,13 +5,17 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { topic, style, cta, searchFacts } = req.body;
+  const { topic, style, cta, searchFacts, temperature } = req.body;
   const totalLength = 30; // Hardcoded five-beat arc
   const facts = Array.isArray(searchFacts)
     ? searchFacts.filter((fact) => typeof fact === 'string' && fact.trim().length > 0)
     : [];
   const trimmedCta = typeof cta === 'string' ? cta.trim() : '';
   const rawStyle = typeof style === 'string' ? style.trim() : '';
+  const parsedTemperature = Number(temperature);
+  const rawTemperature = Number.isFinite(parsedTemperature) ? parsedTemperature : 6;
+  const clampedTemperature = Math.max(0, Math.min(10, rawTemperature));
+  const openAiTemperature = Number((clampedTemperature / 10).toFixed(2));
   const styleDisplay = rawStyle.length === 0 ? 'lighthearted and comedic' : rawStyle;
   const styleDirective = rawStyle.length === 0
     ? 'keep it quick, warm, and a little mischievous'
@@ -61,7 +65,7 @@ Return only the formatted beats in plain text.`;
       model: 'gpt-4o',
       messages: [{ role: 'user', content: prompt }],
       max_tokens: 900,
-      temperature: 0.6,
+      temperature: openAiTemperature,
     });
 
     res.status(200).json({ text: completion.choices[0].message.content });

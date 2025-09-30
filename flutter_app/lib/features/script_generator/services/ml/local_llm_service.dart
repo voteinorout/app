@@ -97,6 +97,7 @@ class LocalLlmService {
     required String style,
     List<String>? searchFacts,
     String? cta,
+    int temperature = 6,
   }) async {
     // Attempt to use the hosted OpenAI/Vercel service first.
     final int targetLength = _fallbackTotalLength;
@@ -106,6 +107,7 @@ class LocalLlmService {
       style: style,
       cta: cta,
       searchFacts: searchFacts,
+      temperature: temperature,
     );
     if (hostedResult != null && hostedResult.trim().isNotEmpty) {
       return hostedResult.trim();
@@ -521,7 +523,12 @@ class LocalLlmService {
     required String style,
     String? cta,
     List<String>? searchFacts,
+    int? temperature,
   }) async {
+    assert(
+      temperature == null || (temperature >= 0 && temperature <= 10),
+      'Temperature should use the 0-10 scale before normalization.',
+    );
     final String rawJson = _generateFallbackScript(
       topic: topic,
       length: length,

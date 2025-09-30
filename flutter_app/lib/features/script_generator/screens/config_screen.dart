@@ -18,8 +18,17 @@ class _ConfigScreenState extends State<ConfigScreen>
   final TextEditingController _topicController = TextEditingController();
   late final ScrollController _scriptScrollController;
 
+  static const Map<String, int> _styleTemperatureDefaults = <String, int>{
+    'Educational': 4,
+    'Motivational': 6,
+    'Comedy': 8,
+  };
+  static const int _minTemperature = 0;
+  static const int _maxTemperature = 10;
+
   late TabController _tabController;
   String _style = 'Educational';
+  int _temperature = _styleTemperatureDefaults['Educational']!;
   bool _isSubmitting = false;
   String? _generatedScript;
   bool _usedHostedGenerator = true;
@@ -38,6 +47,19 @@ class _ConfigScreenState extends State<ConfigScreen>
     _scriptScrollController.dispose();
     _tabController.dispose();
     super.dispose();
+  }
+
+  int? _resolveTemperatureForStyle(String style) =>
+      _styleTemperatureDefaults[style];
+
+  String? _resolveStyleForTemperature(int temperature) {
+    for (final MapEntry<String, int> entry
+        in _styleTemperatureDefaults.entries) {
+      if (entry.value == temperature) {
+        return entry.key;
+      }
+    }
+    return null;
   }
 
   Future<void> _generateScript() async {
@@ -71,6 +93,7 @@ class _ConfigScreenState extends State<ConfigScreen>
         length,
         selectedStyle,
         cta: cta.isEmpty ? null : cta,
+        temperature: _temperature,
       );
 
       final String cleanedScript = script.trim();
@@ -222,33 +245,106 @@ class _ConfigScreenState extends State<ConfigScreen>
                               ),
                             ),
                             const SizedBox(height: 20),
-                            DropdownButtonFormField<String>(
-                              initialValue: _style,
-                              items: const <DropdownMenuItem<String>>[
-                                DropdownMenuItem(
-                                  value: 'Educational',
-                                  child: Text('Educational'),
+                            Row(
+                              children: <Widget>[
+                                Expanded(
+                                  child: InputDecorator(
+                                    decoration: const InputDecoration(
+                                      labelText: 'Style',
+                                    ),
+                                    child: DropdownButton<String>(
+                                      value: _style,
+                                      isExpanded: true,
+                                      underline: const SizedBox.shrink(),
+                                      items: const <DropdownMenuItem<String>>[
+                                        DropdownMenuItem(
+                                          value: 'Educational',
+                                          child: Text('Educational'),
+                                        ),
+                                        DropdownMenuItem(
+                                          value: 'Motivational',
+                                          child: Text('Motivational'),
+                                        ),
+                                        DropdownMenuItem(
+                                          value: 'Comedy',
+                                          child: Text('Comedy'),
+                                        ),
+                                        DropdownMenuItem(
+                                          value: 'Other',
+                                          child: Text('Other'),
+                                        ),
+                                      ],
+                                      onChanged: _isSubmitting
+                                          ? null
+                                          : (String? value) {
+                                              if (value == null) {
+                                                return;
+                                              }
+                                              setState(() {
+                                                _style = value;
+                                                final int? mapped =
+                                                    _resolveTemperatureForStyle(
+                                                      value,
+                                                    );
+                                                if (mapped != null) {
+                                                  _temperature = mapped;
+                                                }
+                                              });
+                                            },
+                                    ),
+                                  ),
                                 ),
-                                DropdownMenuItem(
-                                  value: 'Motivational',
-                                  child: Text('Motivational'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'Comedy',
-                                  child: Text('Comedy'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'Other',
-                                  child: Text('Other'),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: InputDecorator(
+                                    decoration: const InputDecoration(
+                                      labelText: 'Temperature',
+                                      helperText:
+                                          'Educational → 4, Motivational → 6, Comedy → 8',
+                                    ),
+                                    child: DropdownButton<int>(
+                                      value: _temperature,
+                                      isExpanded: true,
+                                      underline: const SizedBox.shrink(),
+                                      items:
+                                          List<DropdownMenuItem<int>>.generate(
+                                            _maxTemperature -
+                                                _minTemperature +
+                                                1,
+                                            (int index) {
+                                              final int value =
+                                                  _minTemperature + index;
+                                              return DropdownMenuItem<int>(
+                                                value: value,
+                                                child: Text(value.toString()),
+                                              );
+                                            },
+                                          ),
+                                      onChanged: _isSubmitting
+                                          ? null
+                                          : (int? value) {
+                                              if (value == null) {
+                                                return;
+                                              }
+                                              setState(() {
+                                                _temperature = value;
+                                                final String? matchedStyle =
+                                                    _resolveStyleForTemperature(
+                                                      value,
+                                                    );
+                                                if (matchedStyle != null) {
+                                                  _style = matchedStyle;
+                                                } else if (_style != 'Other' &&
+                                                    _styleTemperatureDefaults
+                                                        .containsKey(_style)) {
+                                                  _style = 'Other';
+                                                }
+                                              });
+                                            },
+                                    ),
+                                  ),
                                 ),
                               ],
-                              decoration: const InputDecoration(
-                                labelText: 'Style (optional)',
-                              ),
-                              style: theme.textTheme.bodyMedium,
-                              onChanged: (String? value) => setState(
-                                () => _style = value ?? 'Educational',
-                              ),
                             ),
                             const SizedBox(height: 8),
                             Center(
@@ -258,7 +354,11 @@ class _ConfigScreenState extends State<ConfigScreen>
                                     : () {
                                         _topicController.clear();
                                         _ctaController.clear();
-                                        setState(() => _style = 'Educational');
+                                        setState(() {
+                                          _style = 'Educational';
+                                          _temperature =
+                                              _styleTemperatureDefaults['Educational']!;
+                                        });
                                       },
                                 style: TextButton.styleFrom(
                                   padding: EdgeInsets.zero,
