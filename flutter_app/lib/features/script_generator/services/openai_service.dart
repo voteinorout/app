@@ -13,6 +13,7 @@ class OpenAIService {
     required String style,
     String? cta,
     List<String>? searchFacts,
+    required int temperature,
   }) async {
     if (_endpoint.isEmpty) {
       if (kDebugMode) {
@@ -29,6 +30,7 @@ class OpenAIService {
       'length': length,
       'style': style,
       'searchFacts': searchFacts ?? <String>[],
+      'temperature': temperature,
     };
     if (cta != null && cta.trim().isNotEmpty) {
       payload['cta'] = cta.trim();

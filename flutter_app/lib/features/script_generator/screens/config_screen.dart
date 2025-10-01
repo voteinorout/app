@@ -18,8 +18,15 @@ class _ConfigScreenState extends State<ConfigScreen>
   final TextEditingController _topicController = TextEditingController();
   late final ScrollController _scriptScrollController;
 
+  static const Map<String, int> _styleTemperatureDefaults = <String, int>{
+    'Educational': 4,
+    'Motivational': 6,
+    'Comedy': 8,
+  };
+
   late TabController _tabController;
   String _style = 'Educational';
+  int _temperature = _styleTemperatureDefaults['Educational']!;
   bool _isSubmitting = false;
   String? _generatedScript;
   bool _usedHostedGenerator = true;
@@ -54,9 +61,7 @@ class _ConfigScreenState extends State<ConfigScreen>
     }
 
     const int length = 30;
-    final String selectedStyle = _style == 'Other'
-        ? 'Unspecified'
-        : _style.trim();
+    final String selectedStyle = _style;
     final String cta = _ctaController.text.trim();
 
     setState(() {
@@ -71,6 +76,7 @@ class _ConfigScreenState extends State<ConfigScreen>
         length,
         selectedStyle,
         cta: cta.isEmpty ? null : cta,
+        temperature: _temperature,
       );
 
       final String cleanedScript = script.trim();
@@ -222,32 +228,40 @@ class _ConfigScreenState extends State<ConfigScreen>
                               ),
                             ),
                             const SizedBox(height: 20),
-                            DropdownButtonFormField<String>(
-                              initialValue: _style,
-                              items: const <DropdownMenuItem<String>>[
-                                DropdownMenuItem(
-                                  value: 'Educational',
-                                  child: Text('Educational'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'Motivational',
-                                  child: Text('Motivational'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'Comedy',
-                                  child: Text('Comedy'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'Other',
-                                  child: Text('Other'),
-                                ),
-                              ],
+                            InputDecorator(
                               decoration: const InputDecoration(
-                                labelText: 'Style (optional)',
+                                labelText: 'Style',
                               ),
-                              style: theme.textTheme.bodyMedium,
-                              onChanged: (String? value) => setState(
-                                () => _style = value ?? 'Educational',
+                              child: DropdownButton<String>(
+                                value: _style,
+                                isExpanded: true,
+                                underline: const SizedBox.shrink(),
+                                items: const <DropdownMenuItem<String>>[
+                                  DropdownMenuItem(
+                                    value: 'Educational',
+                                    child: Text('Educational'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'Motivational',
+                                    child: Text('Motivational'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'Comedy',
+                                    child: Text('Comedy'),
+                                  ),
+                                ],
+                                onChanged: _isSubmitting
+                                    ? null
+                                    : (String? value) {
+                                        if (value == null) {
+                                          return;
+                                        }
+                                        setState(() {
+                                          _style = value;
+                                          _temperature =
+                                              _styleTemperatureDefaults[value]!;
+                                        });
+                                      },
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -258,7 +272,11 @@ class _ConfigScreenState extends State<ConfigScreen>
                                     : () {
                                         _topicController.clear();
                                         _ctaController.clear();
-                                        setState(() => _style = 'Educational');
+                                        setState(() {
+                                          _style = 'Educational';
+                                          _temperature =
+                                              _styleTemperatureDefaults['Educational']!;
+                                        });
                                       },
                                 style: TextButton.styleFrom(
                                   padding: EdgeInsets.zero,

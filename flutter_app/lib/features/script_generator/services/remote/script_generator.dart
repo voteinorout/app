@@ -29,6 +29,7 @@ class ScriptGenerator {
     int length,
     String style, {
     String? cta,
+    required int temperature,
   }) async {
     _lastRunWarning = null;
     final String trimmedCta = (cta ?? '').trim();
@@ -38,6 +39,7 @@ class ScriptGenerator {
       length: _targetLengthSeconds,
       style: style,
       cta: trimmedCta.isEmpty ? null : trimmedCta,
+      temperature: temperature,
     );
 
     if (remoteScript != null && remoteScript.trim().isNotEmpty) {
@@ -53,6 +55,7 @@ class ScriptGenerator {
           length: _targetLengthSeconds,
           style: style,
           cta: trimmedCta.isEmpty ? null : trimmedCta,
+          temperature: temperature,
         );
       }
       return _ensureBeatCoverage(
@@ -76,6 +79,7 @@ class ScriptGenerator {
           length: _targetLengthSeconds,
           style: style,
           cta: trimmedCta.isEmpty ? null : trimmedCta,
+          temperature: temperature,
         );
 
     if (localSegments.isEmpty) {

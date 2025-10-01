@@ -42,6 +42,7 @@ void main() {
           'dogs are cool',
           12,
           'Educational',
+          temperature: 4,
         );
 
         expect(script.isNotEmpty, isTrue);
