@@ -356,7 +356,7 @@ class _BeatSlot {
     required this.end,
   });
 
-  String get rangeString => '${start}-${end}s';
+  String get rangeString => '$start-${end}s';
   String get normalizedRange => rangeString;
 
   bool matchesRange(String candidate) => candidate == normalizedRange;

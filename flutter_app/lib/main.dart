@@ -64,7 +64,7 @@ class VoteInOrOutApp extends StatelessWidget {
         colorScheme: colorScheme,
         scaffoldBackgroundColor: _background,
         useMaterial3: true,
-        appBarTheme: AppBarTheme(
+        appBarTheme: const AppBarTheme(
           backgroundColor: Colors.white,
           foregroundColor: _primaryNavy,
           centerTitle: true,

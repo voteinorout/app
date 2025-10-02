@@ -101,7 +101,7 @@ class _ScriptScreenState extends State<ScriptScreen> {
                                     blockquote: theme.textTheme.bodySmall!
                                         .copyWith(
                                           color: theme.colorScheme.onSurface
-                                              .withOpacity(0.6),
+                                              .withValues(alpha: 0.6),
                                           height: 1.4,
                                         ),
                                     blockquotePadding:
@@ -112,7 +112,7 @@ class _ScriptScreenState extends State<ScriptScreen> {
                                       border: Border(
                                         left: BorderSide(
                                           color: theme.colorScheme.onSurface
-                                              .withOpacity(0.12),
+                                              .withValues(alpha: 0.12),
                                           width: 2,
                                         ),
                                       ),
@@ -141,7 +141,7 @@ class _ScriptScreenState extends State<ScriptScreen> {
                 child: Text(
                   'Fallback script',
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.5),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                     letterSpacing: 0.4,
                   ),
                 ),

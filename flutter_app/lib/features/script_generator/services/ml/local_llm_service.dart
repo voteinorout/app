@@ -100,7 +100,7 @@ class LocalLlmService {
     int temperature = 6,
   }) async {
     // Attempt to use the hosted OpenAI/Vercel service first.
-    final int targetLength = _fallbackTotalLength;
+    const int targetLength = _fallbackTotalLength;
     final String? hostedResult = await OpenAIService.generateJsonScript(
       topic: topic,
       length: targetLength,
@@ -260,7 +260,7 @@ class LocalLlmService {
     final List<String> prioritizedFacts = _prioritizeFacts(facts);
     int factCursor = 0;
 
-    String _titleCaseTopic(String value) {
+    String titleCaseTopic(String value) {
       if (value.trim().isEmpty) {
         return 'This Story';
       }
@@ -274,9 +274,9 @@ class LocalLlmService {
           .join(' ');
     }
 
-    final String topicTitle = _titleCaseTopic(topic);
+    final String topicTitle = titleCaseTopic(topic);
 
-    String _sanitizeTopicDisplay(String raw, String fallback) {
+    String sanitizeTopicDisplay(String raw, String fallback) {
       final String trimmed = raw.trim();
       if (trimmed.isEmpty) {
         return fallback;
@@ -299,7 +299,7 @@ class LocalLlmService {
       return cleaned;
     }
 
-    final String topicDisplay = _sanitizeTopicDisplay(topic, topicTitle);
+    final String topicDisplay = sanitizeTopicDisplay(topic, topicTitle);
 
     String? nextFact() {
       if (prioritizedFacts.isEmpty) {
@@ -311,7 +311,7 @@ class LocalLlmService {
       return null;
     }
 
-    String _ensureSentence(String raw) {
+    String ensureSentence(String raw) {
       final String trimmed = raw.trim();
       if (trimmed.isEmpty) {
         return '';
@@ -351,13 +351,13 @@ class LocalLlmService {
         if (!hasFact) {
           return '';
         }
-        return _ensureSentence('$prefix ${factPrompt!.trim()}');
+        return ensureSentence('$prefix ${factPrompt!.trim()}');
       }
 
       switch (beat.label) {
         case 'Hook':
           sentences.add(
-            _ensureSentence(
+            ensureSentence(
               'Hit the feed with a $toneDescriptor first line so $topicDisplay feels like breaking news, not background noise',
             ),
           );
@@ -368,14 +368,14 @@ class LocalLlmService {
             sentences.add(factLine);
           }
           sentences.add(
-            _ensureSentence(
+            ensureSentence(
               'Leave them hanging on a question the next beat must answer',
             ),
           );
           break;
         case 'Spark':
           sentences.add(
-            _ensureSentence(
+            ensureSentence(
               'Name the spark that proves this story is unfolding right now—who lit the fuse and why it matters tonight',
             ),
           );
@@ -386,14 +386,14 @@ class LocalLlmService {
             sentences.add(factLine);
           }
           sentences.add(
-            _ensureSentence(
+            ensureSentence(
               'Make the viewer feel the stakes tightening without losing momentum',
             ),
           );
           break;
         case 'Proof':
           sentences.add(
-            _ensureSentence(
+            ensureSentence(
               'Drop the receipts that lock the narrative in place: show what changed, who felt it, and how big the shift really is',
             ),
           );
@@ -402,14 +402,14 @@ class LocalLlmService {
             sentences.add(factLine);
           }
           sentences.add(
-            _ensureSentence(
+            ensureSentence(
               'Tie the evidence straight back to the spark so the arc stays seamless',
             ),
           );
           break;
         case 'Turn':
           sentences.add(
-            _ensureSentence(
+            ensureSentence(
               'Show the pivot—people flipping frustration into forward motion and inviting the viewer into that turn',
             ),
           );
@@ -420,14 +420,14 @@ class LocalLlmService {
             sentences.add(factLine);
           }
           sentences.add(
-            _ensureSentence(
+            ensureSentence(
               'Set up the CTA by hinting at what scales if more of us join in',
             ),
           );
           break;
         case 'Final CTA':
           sentences.add(
-            _ensureSentence(
+            ensureSentence(
               'Deliver the CTA like a payoff: spell out the action, the urgency, and the emotional win for taking it now',
             ),
           );
@@ -438,7 +438,7 @@ class LocalLlmService {
             sentences.add(factLine);
           }
           sentences.add(
-            _ensureSentence(
+            ensureSentence(
               'Close with a vivid image or promise that sticks after the video ends',
             ),
           );
@@ -791,5 +791,5 @@ class _FallbackBeat {
     this.fallbackToTopic = false,
   });
 
-  String get normalizedRange => '${start}-${end}s';
+  String get normalizedRange => '$start-${end}s';
 }

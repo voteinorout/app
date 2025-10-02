@@ -153,15 +153,15 @@ class _ConfigScreenState extends State<ConfigScreen>
     final ThemeData theme = Theme.of(context);
     final ButtonStyle? primaryButtonStyle = theme.elevatedButtonTheme.style
         ?.copyWith(
-          overlayColor: MaterialStateProperty.resolveWith<Color?>((
-            Set<MaterialState> states,
+          overlayColor: WidgetStateProperty.resolveWith<Color?>((
+            Set<WidgetState> states,
           ) {
-            if (states.contains(MaterialState.hovered) ||
-                states.contains(MaterialState.focused)) {
-              return theme.colorScheme.onPrimary.withOpacity(0.10);
+            if (states.contains(WidgetState.hovered) ||
+                states.contains(WidgetState.focused)) {
+              return theme.colorScheme.onPrimary.withValues(alpha: 0.10);
             }
-            if (states.contains(MaterialState.pressed)) {
-              return theme.colorScheme.onPrimary.withOpacity(0.16);
+            if (states.contains(WidgetState.pressed)) {
+              return theme.colorScheme.onPrimary.withValues(alpha: 0.16);
             }
             return null;
           }),
@@ -281,7 +281,7 @@ class _ConfigScreenState extends State<ConfigScreen>
                                 style: TextButton.styleFrom(
                                   padding: EdgeInsets.zero,
                                   foregroundColor: theme.colorScheme.primary
-                                      .withOpacity(0.8),
+                                      .withValues(alpha: 0.8),
                                 ),
                                 child: const Text('Reset form'),
                               ),
@@ -350,7 +350,7 @@ class _ConfigScreenState extends State<ConfigScreen>
                                         style: theme.textTheme.bodySmall
                                             ?.copyWith(
                                               color: theme.colorScheme.onSurface
-                                                  .withOpacity(0.6),
+                                                  .withValues(alpha: 0.6),
                                             ),
                                       ),
                                       const SizedBox(height: 12),
@@ -376,7 +376,7 @@ class _ConfigScreenState extends State<ConfigScreen>
                                                     color: theme
                                                         .colorScheme
                                                         .onSurface
-                                                        .withOpacity(0.6),
+                                                        .withValues(alpha: 0.6),
                                                     height: 1.4,
                                                   ),
                                               blockquotePadding:
@@ -390,7 +390,9 @@ class _ConfigScreenState extends State<ConfigScreen>
                                                         color: theme
                                                             .colorScheme
                                                             .onSurface
-                                                            .withOpacity(0.12),
+                                                            .withValues(
+                                                              alpha: 0.12,
+                                                            ),
                                                         width: 2,
                                                       ),
                                                     ),
@@ -411,8 +413,8 @@ class _ConfigScreenState extends State<ConfigScreen>
                             child: Text(
                               'Fallback script',
                               style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.onSurface.withOpacity(
-                                  0.5,
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.5,
                                 ),
                                 letterSpacing: 0.4,
                               ),

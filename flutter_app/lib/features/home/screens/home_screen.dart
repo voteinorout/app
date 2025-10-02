@@ -112,10 +112,7 @@ class HomeScreen extends StatelessWidget {
                 description:
                     'Access scripts stored securely on this device—no account required.',
                 cta: 'View saved scripts',
-                onPressed: () => Navigator.pushNamed(
-                  context,
-                  '/saved-scripts',
-                ),
+                onPressed: () => Navigator.pushNamed(context, '/saved-scripts'),
               ),
               _featureCard(
                 context,
@@ -152,7 +149,7 @@ class HomeScreen extends StatelessWidget {
                 child: Text(
                   'version 1.3.0',
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.4),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                     letterSpacing: 0.4,
                   ),
                 ),

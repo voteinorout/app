@@ -36,10 +36,10 @@ class OpenAIService {
       payload['cta'] = cta.trim();
     }
 
-    final RetryOptions retryOptions = RetryOptions(
+    const RetryOptions retryOptions = RetryOptions(
       maxAttempts: 3,
-      delayFactor: const Duration(milliseconds: 500),
-      maxDelay: const Duration(seconds: 2),
+      delayFactor: Duration(milliseconds: 500),
+      maxDelay: Duration(seconds: 2),
     );
 
     try {
