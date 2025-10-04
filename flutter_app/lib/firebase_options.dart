@@ -54,10 +54,10 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyD10pp7YycemY9Msj3V6Gyvc_TUsUowd_8',
-    appId: '1:1034416760698:ios:2ac0dc157d5208506918c3',
+    appId: '1:1034416760698:ios:b5bc6bbf3f407c7e6918c3',
     messagingSenderId: '1034416760698',
     projectId: 'vioo-app-dev',
     storageBucket: 'vioo-app-dev.firebasestorage.app',
-    iosBundleId: 'com.example.viooapp',
+    iosBundleId: 'com.voteinorout.vioo',
   );
 }
