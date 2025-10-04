@@ -16,6 +16,15 @@ flutter pub get
 flutter run --dart-define=SCRIPT_PROXY_ENDPOINT=https://your-vercel-app.vercel.app/api/generate-script
 ```
 
+### Open the iOS Runner workspace in Xcode
+
+```bash
+cd flutter_app/ios
+open Runner.xcworkspace
+```
+
+After Xcode opens, pick the **Runner** scheme and choose a simulator/device in the toolbar before pressing ⌘R.
+
 ## Run tests
 
 ```bash
