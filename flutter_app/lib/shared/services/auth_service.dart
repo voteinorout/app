@@ -3,7 +3,17 @@ import 'package:flutter/foundation.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 class AuthService {
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  AuthService({FirebaseAuth? firebaseAuth})
+      : _firebaseAuth = firebaseAuth ?? _firebaseAuthProvider();
+
+  static FirebaseAuth Function() _firebaseAuthProvider = () => FirebaseAuth.instance;
+
+  @visibleForTesting
+  static void overrideFirebaseAuth(FirebaseAuth Function() provider) {
+    _firebaseAuthProvider = provider;
+  }
+
+  final FirebaseAuth _firebaseAuth;
 
   Stream<User?> authStateChanges() => _firebaseAuth.authStateChanges();
 
@@ -34,4 +44,6 @@ class AuthService {
   Future<void> signOut() => _firebaseAuth.signOut();
 
   String getUserEmail() => _firebaseAuth.currentUser?.email ?? 'User';
+
+  User? get currentUser => _firebaseAuth.currentUser;
 }

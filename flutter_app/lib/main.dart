@@ -12,6 +12,7 @@ import 'package:vioo_app/features/script_generator/screens/saved_scripts_screen.
 import 'package:vioo_app/features/script_generator/services/local/script_storage.dart';
 import 'package:vioo_app/shared/config/proxy_config.dart';
 import 'package:vioo_app/firebase_options.dart';
+import 'package:vioo_app/shared/services/auth_service.dart';
 
 const String _scriptProxyEndpoint = ProxyConfig.scriptProxyEndpoint;
 
@@ -160,7 +161,7 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     Future.delayed(const Duration(seconds: 2), () {
       if (!mounted) return;
-      final User? user = FirebaseAuth.instance.currentUser;
+      final User? user = AuthService().currentUser;
       Navigator.of(
         context,
       ).pushReplacementNamed(user == null ? '/login' : '/home');
