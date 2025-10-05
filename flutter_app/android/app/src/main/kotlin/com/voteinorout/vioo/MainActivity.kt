@@ -1,4 +1,4 @@
-package com.example.vioo_app
+package com.voteinorout.vioo
 
 import io.flutter.embedding.android.FlutterActivity
 

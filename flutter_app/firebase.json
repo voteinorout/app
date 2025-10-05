@@ -1,0 +1,1 @@
+{"flutter":{"platforms":{"ios":{"default":{"projectId":"vioo-app-dev","appId":"1:1034416760698:ios:2ac0dc157d5208506918c3","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"vioo-app-dev","configurations":{"ios":"1:1034416760698:ios:2ac0dc157d5208506918c3"}}}}}}

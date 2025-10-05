@@ -1,18 +1,26 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:vioo_app/features/auth/screens/login_screen.dart';
 import 'package:vioo_app/features/home/screens/home_screen.dart';
 import 'package:vioo_app/features/script_generator/screens/config_screen.dart';
 import 'package:vioo_app/features/script_generator/screens/script_screen.dart';
 import 'package:vioo_app/features/script_generator/screens/saved_scripts_screen.dart';
 import 'package:vioo_app/features/script_generator/services/local/script_storage.dart';
 import 'package:vioo_app/shared/config/proxy_config.dart';
+import 'package:vioo_app/firebase_options.dart';
+import 'package:vioo_app/shared/services/auth_service.dart';
 
 const String _scriptProxyEndpoint = ProxyConfig.scriptProxyEndpoint;
 
 Future<void> main() async {
+  // firebase setup
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   await Hive.initFlutter();
   await ScriptStorage.init();
   if (_scriptProxyEndpoint.isEmpty && kDebugMode) {
@@ -129,6 +137,7 @@ class VoteInOrOutApp extends StatelessWidget {
       initialRoute: '/splash',
       routes: {
         '/splash': (context) => const SplashScreen(),
+        '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
         '/config': (context) => const ConfigScreen(),
         '/script': (context) => const ScriptScreen(),
@@ -152,7 +161,10 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     Future.delayed(const Duration(seconds: 2), () {
       if (!mounted) return;
-      Navigator.of(context).pushReplacementNamed('/home');
+      final User? user = AuthService().currentUser;
+      Navigator.of(
+        context,
+      ).pushReplacementNamed(user == null ? '/login' : '/home');
     });
   }
 
