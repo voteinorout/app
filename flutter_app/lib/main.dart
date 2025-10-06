@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:vioo_app/features/auth/screens/login_screen.dart';
 import 'package:vioo_app/features/home/screens/home_screen.dart';
+import 'package:vioo_app/features/home/screens/terms_screen.dart';
 import 'package:vioo_app/features/script_generator/screens/config_screen.dart';
 import 'package:vioo_app/features/script_generator/screens/script_screen.dart';
 import 'package:vioo_app/features/script_generator/screens/saved_scripts_screen.dart';
@@ -142,6 +143,7 @@ class VoteInOrOutApp extends StatelessWidget {
         '/config': (context) => const ConfigScreen(),
         '/script': (context) => const ScriptScreen(),
         '/saved-scripts': (context) => const SavedScriptsScreen(),
+        '/terms': (context) => const TermsScreen(),
       },
     );
   }

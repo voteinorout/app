@@ -1,8 +1,159 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:vioo_app/shared/services/auth_service.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
+
+  static const String _supportEmail = 'voteinorout@gmail.com';
+  static const String _supportSubject = 'Comment or Feedback from App';
+
+  Future<void> _launchSupportEmail(BuildContext context) async {
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: _supportEmail,
+      queryParameters: <String, String>{'subject': _supportSubject},
+    );
+
+    try {
+      final bool launched = await launchUrl(
+        emailUri,
+        mode: LaunchMode.externalApplication,
+      );
+
+      if (!launched && context.mounted) {
+        _showErrorSnackBar(context);
+      }
+    } catch (_) {
+      if (context.mounted) {
+        _showErrorSnackBar(context);
+      }
+    }
+  }
+
+  void _showErrorSnackBar(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Unable to open email client.')),
+    );
+  }
+
+  Future<void> _handleLogout(BuildContext context) async {
+    Navigator.of(context).pop();
+    await AuthService().signOut();
+    if (context.mounted) {
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+    }
+  }
+
+  Drawer _buildDrawer(BuildContext context) {
+    final AuthService authService = AuthService();
+    final String email = authService.currentUser?.email ?? 'User';
+    final String? photoUrl = authService.getUserPhotoUrl();
+    final String displayInitial = (() {
+      final String? displayName = authService.currentUser?.displayName;
+      final String source =
+          (displayName != null && displayName.trim().isNotEmpty)
+          ? displayName
+          : email;
+      final String trimmed = source.trim();
+      if (trimmed.isEmpty) {
+        return '?';
+      }
+      return trimmed.substring(0, 1).toUpperCase();
+    })();
+
+    return Drawer(
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 32,
+                ),
+                children: <Widget>[
+                  Center(
+                    child: Column(
+                      children: <Widget>[
+                        CircleAvatar(
+                          radius: 44,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.1),
+                          backgroundImage:
+                              photoUrl != null && photoUrl.isNotEmpty
+                              ? NetworkImage(photoUrl)
+                              : null,
+                          child: (photoUrl == null || photoUrl.isEmpty)
+                              ? Text(
+                                  displayInitial,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium
+                                      ?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                      ),
+                                )
+                              : null,
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Icon(
+                              Icons.mail_outline,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.7),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              email,
+                              style: Theme.of(context).textTheme.bodyLarge,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  ListTile(
+                    leading: const Icon(Icons.headset_mic_outlined),
+                    title: const Text('Support'),
+                    subtitle: const Text('Report a problem'),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      _launchSupportEmail(context);
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.description_outlined),
+                    title: const Text('Terms and Conditions'),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      Navigator.of(context).pushNamed('/terms');
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 0),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Log out'),
+              onTap: () => _handleLogout(context),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _featureCard(
     BuildContext context, {
@@ -69,6 +220,7 @@ class HomeScreen extends StatelessWidget {
     final ThemeData theme = Theme.of(context);
 
     return Scaffold(
+      drawer: _buildDrawer(context),
       appBar: AppBar(
         title: SvgPicture.asset(
           'assets/logo-vioo-navy.svg',

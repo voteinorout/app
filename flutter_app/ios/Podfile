@@ -1,6 +1,9 @@
 # Define a minimum platform to match modern plugin requirements
 platform :ios, '15.0'
 
+# Ensure CocoaPods runs with UTF-8 encoding to avoid normalization errors in some environments
+ENV['LANG'] = 'en_US.UTF-8'
+
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 

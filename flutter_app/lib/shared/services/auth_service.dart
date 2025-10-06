@@ -4,9 +4,10 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 class AuthService {
   AuthService({FirebaseAuth? firebaseAuth})
-      : _firebaseAuth = firebaseAuth ?? _firebaseAuthProvider();
+    : _firebaseAuth = firebaseAuth ?? _firebaseAuthProvider();
 
-  static FirebaseAuth Function() _firebaseAuthProvider = () => FirebaseAuth.instance;
+  static FirebaseAuth Function() _firebaseAuthProvider = () =>
+      FirebaseAuth.instance;
 
   @visibleForTesting
   static void overrideFirebaseAuth(FirebaseAuth Function() provider) {
@@ -33,7 +34,10 @@ class AuthService {
             accessToken: appleCredential.authorizationCode,
           );
 
-      return _firebaseAuth.signInWithCredential(oauthCredential);
+      final UserCredential credential =
+          await _firebaseAuth.signInWithCredential(oauthCredential);
+      await credential.user?.reload();
+      return credential;
     } catch (e, stackTrace) {
       debugPrint('signInWithApple failed: $e');
       debugPrintStack(stackTrace: stackTrace);
@@ -44,6 +48,8 @@ class AuthService {
   Future<void> signOut() => _firebaseAuth.signOut();
 
   String getUserEmail() => _firebaseAuth.currentUser?.email ?? 'User';
+
+  String? getUserPhotoUrl() => _firebaseAuth.currentUser?.photoURL;
 
   User? get currentUser => _firebaseAuth.currentUser;
 }
