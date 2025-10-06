@@ -21,7 +21,7 @@ class _ConfigScreenState extends State<ConfigScreen>
   late final ScrollController _scriptScrollController;
 
   static const Map<String, int> _styleTemperatureDefaults = <String, int>{
-    'Educational': 4,
+    'Educational': 3,
     'Motivational': 6,
     'Comedy': 8,
   };
