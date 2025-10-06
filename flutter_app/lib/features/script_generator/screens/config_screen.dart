@@ -836,6 +836,24 @@ class _ConfigScreenState extends State<ConfigScreen>
                                                   ),
                                             ),
                                       ),
+                                      const SizedBox(height: 32),
+                                      Text(
+                                        'Want to strengthen this message?',
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          color: theme.colorScheme.onSurface
+                                              .withValues(alpha: 0.6),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Paste the script into your favorite AI tool (like ChatGPT, Gemini or Claude) and ask it to keep the same tone and tempo while improving clarity, sharpening the message, or adding anything it missed. Tailor it to your voice, your community, or your call to action.',
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: theme.colorScheme.onSurface
+                                              .withValues(alpha: 0.6),
+                                          height: 1.4,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),

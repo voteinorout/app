@@ -64,12 +64,11 @@ class ScriptGenerator {
         _beatSlots.length,
         fallbackSegments: supplementSegments,
       );
-      final String withFacts = _injectFactsIntoScript(
+      return _injectFactsIntoScript(
         ensured,
         factList,
         style,
       );
-      return _appendEnhancementCallout(withFacts);
     }
 
     _lastRunUsedHosted = false;
@@ -121,12 +120,11 @@ class ScriptGenerator {
     _lastRunWarning =
         LocalLlmService.lastError ??
         'Hosted script generation failed; using deterministic fallback.';
-    final String withFacts = _injectFactsIntoScript(
+    return _injectFactsIntoScript(
       ensured,
       factList,
       style,
     );
-    return _appendEnhancementCallout(withFacts);
   }
 
   static List<ScriptSegment> _parseSegments(String rawContent, int length) {
@@ -246,17 +244,6 @@ class ScriptGenerator {
     }
 
     return buffer.toString();
-  }
-
-  static String _appendEnhancementCallout(String script) {
-    final String trimmed = script.trimRight();
-    if (trimmed.isEmpty ||
-        trimmed.contains('Want to strengthen this message?')) {
-      return trimmed;
-    }
-    const String callout =
-        '\n\n\nWant to strengthen this message?\n\nPaste the script into your favorite AI tool (like ChatGPT, Gemini or Claude) and ask it to keep the same tone and tempo while improving clarity, sharpening the message, or adding anything it missed. Tailor it to your voice, your community, or your call to action.';
-    return '$trimmed\n\n$callout';
   }
 
   static int _coerceStartTime(dynamic value, int fallback) {
