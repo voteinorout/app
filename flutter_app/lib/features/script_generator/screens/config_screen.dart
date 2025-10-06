@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:vioo_app/features/script_generator/services/remote/script_generator.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:vioo_app/features/script_generator/models/generated_script.dart';
 import 'package:vioo_app/features/script_generator/services/local/script_storage.dart';
+import 'package:vioo_app/features/script_generator/services/remote/script_generator.dart';
 
 class ConfigScreen extends StatefulWidget {
   const ConfigScreen({super.key});
@@ -30,11 +32,12 @@ class _ConfigScreenState extends State<ConfigScreen>
   bool _isSubmitting = false;
   String? _generatedScript;
   bool _usedHostedGenerator = true;
+  final Set<String> _selectedScriptIds = <String>{};
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _scriptScrollController = ScrollController();
   }
 
@@ -89,6 +92,9 @@ class _ConfigScreenState extends State<ConfigScreen>
           style: selectedStyle,
           content: cleanedScript,
           usedHostedGenerator: usedHosted,
+          cta: cta.isEmpty ? null : cta,
+          temperature: _temperature,
+          length: length,
         );
       } on Object catch (error, stackTrace) {
         saveFailed = true;
@@ -141,6 +147,454 @@ class _ConfigScreenState extends State<ConfigScreen>
     }
   }
 
+  void _loadSavedScript(GeneratedScript script) {
+    FocusScope.of(context).unfocus();
+    final bool styleSupported = _styleTemperatureDefaults.containsKey(
+      script.style,
+    );
+    final String resolvedStyle = styleSupported ? script.style : 'Educational';
+    final int resolvedTemperature =
+        script.temperature ??
+        (_styleTemperatureDefaults[resolvedStyle] ??
+            _styleTemperatureDefaults['Educational']!);
+
+    _topicController.text = script.topic;
+    _ctaController.text = script.cta ?? '';
+
+    setState(() {
+      _style = resolvedStyle;
+      _temperature = resolvedTemperature;
+      _generatedScript = script.content;
+      _usedHostedGenerator = script.usedHostedGenerator;
+      _selectedScriptIds.clear();
+    });
+
+    _tabController.animateTo(1);
+  }
+
+  void _handleScriptTap(GeneratedScript script) {
+    _loadSavedScript(script);
+  }
+
+  void _toggleScriptSelection(String id, bool isSelected) {
+    setState(() {
+      if (isSelected) {
+        _selectedScriptIds.add(id);
+      } else {
+        _selectedScriptIds.remove(id);
+      }
+    });
+  }
+
+  Future<void> _confirmDeleteAllScripts(int total) async {
+    if (total == 0) {
+      return;
+    }
+    final bool confirmed =
+        await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            final ThemeData theme = Theme.of(context);
+            return AlertDialog(
+              title: const Text('Delete all saved scripts?'),
+              content: Text(
+                'Are you sure you would like to delete all $total saved scripts? Click here to continue.',
+                style: theme.textTheme.bodyMedium,
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Delete all'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+
+    if (!confirmed) {
+      return;
+    }
+
+    await ScriptStorage.deleteAll();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _selectedScriptIds.clear();
+    });
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('All saved scripts deleted')));
+  }
+
+  Future<void> _confirmDeleteSelectedScripts(int count) async {
+    if (count == 0) {
+      return;
+    }
+
+    final bool confirmed =
+        await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            final ThemeData theme = Theme.of(context);
+            return AlertDialog(
+              title: Text('Delete $count selected?'),
+              content: Text(
+                'This will remove $count saved script${count == 1 ? '' : 's'}.',
+                style: theme.textTheme.bodyMedium,
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Delete'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+
+    if (!confirmed) {
+      return;
+    }
+
+    final List<String> idsToDelete = List<String>.from(_selectedScriptIds);
+    await ScriptStorage.deleteScripts(idsToDelete);
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _selectedScriptIds.clear();
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          count == 1 ? 'Deleted 1 script' : 'Deleted $count scripts',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteSingleScript(GeneratedScript script) async {
+    final bool confirmed =
+        await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            final ThemeData theme = Theme.of(context);
+            return AlertDialog(
+              title: const Text('Delete script?'),
+              content: Text(
+                'This removes the saved script from this device.',
+                style: theme.textTheme.bodyMedium,
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Delete'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
+
+    if (!confirmed) {
+      return;
+    }
+
+    await ScriptStorage.deleteScript(script.id);
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _selectedScriptIds.remove(script.id);
+    });
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Script deleted')));
+  }
+
+  void _handleCopyScript(GeneratedScript script) {
+    Clipboard.setData(ClipboardData(text: script.content));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Script copied to clipboard')));
+  }
+
+  void _showScriptActionSheet(GeneratedScript script) {
+    final BuildContext rootContext = context;
+    showModalBottomSheet<void>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (BuildContext sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                leading: const Icon(Icons.content_copy_outlined),
+                title: const Text('Copy script'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _handleCopyScript(script);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_outline),
+                title: const Text('Delete script'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  if (!rootContext.mounted) {
+                    return;
+                  }
+                  _confirmDeleteSingleScript(script);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSelectionBar(ThemeData theme) {
+    final int count = _selectedScriptIds.length;
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: SafeArea(
+        minimum: const EdgeInsets.all(16),
+        child: FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: theme.colorScheme.error,
+            foregroundColor: theme.colorScheme.onError,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            textStyle: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          onPressed: () => _confirmDeleteSelectedScripts(count),
+          child: Text(
+            count == 1 ? 'Delete 1 selected' : 'Delete $count selected',
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _truncateScript(String content) {
+    String _stripPrefixes(String value) {
+      String working = value.trim();
+      final RegExp prefixPattern = RegExp(
+        r'^(?:hook[^:]*:|voiceover:|visuals:?|final cta:?|cta:?|beat\s+\d+:|key beat[^:]*:)',
+        caseSensitive: false,
+      );
+      while (true) {
+        final RegExpMatch? match = prefixPattern.firstMatch(working);
+        if (match == null || match.start != 0) {
+          break;
+        }
+        working = working.substring(match.end).trim();
+      }
+      if (working.startsWith('>')) {
+        return '';
+      }
+      return working;
+    }
+
+    final List<String> lines = content.split('\n');
+    String? firstSentence;
+
+    for (final String rawLine in lines) {
+      final String trimmed = rawLine.trim();
+      if (trimmed.isEmpty) {
+        continue;
+      }
+      final String stripped = _stripPrefixes(trimmed);
+      if (stripped.isEmpty) {
+        continue;
+      }
+      firstSentence = stripped;
+      break;
+    }
+
+    final String normalized = (firstSentence ?? content)
+        .replaceAll(RegExp(r'[\*_#>`~-]'), '')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    if (normalized.isEmpty) {
+      return 'Untitled script';
+    }
+    const int maxWords = 14;
+    final List<String> words = normalized.split(' ');
+    if (words.length <= maxWords) {
+      return normalized;
+    }
+    return '${words.take(maxWords).join(' ')}…';
+  }
+
+  String _formatSavedDate(DateTime timestamp) {
+    final DateTime local = timestamp.toLocal();
+    final String month = local.month.toString().padLeft(2, '0');
+    final String day = local.day.toString().padLeft(2, '0');
+    final String year = local.year.toString();
+    return '$month/$day/$year';
+  }
+
+  Widget _buildSavedScriptCard(
+    GeneratedScript script,
+    bool isSelected,
+    ThemeData theme,
+  ) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 12,
+        ),
+        minVerticalPadding: 8,
+        horizontalTitleGap: 12,
+        leading: Checkbox(
+          value: isSelected,
+          onChanged: (bool? value) =>
+              _toggleScriptSelection(script.id, value ?? false),
+        ),
+        title: Text(
+          _truncateScript(script.content),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+        ),
+        subtitle: Text(
+          'Saved ${_formatSavedDate(script.createdAt)}',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
+        trailing: IconButton(
+          icon: const Icon(Icons.more_vert),
+          onPressed: () => _showScriptActionSheet(script),
+        ),
+        onTap: () => _handleScriptTap(script),
+      ),
+    );
+  }
+
+  Widget _buildSavedTab(ThemeData theme) {
+    return SafeArea(
+      child: ValueListenableBuilder<Box<GeneratedScript>>(
+        valueListenable: ScriptStorage.listenable(),
+        builder: (BuildContext context, Box<GeneratedScript> _, __) {
+          final List<GeneratedScript> scripts = ScriptStorage.getScripts();
+          final Set<String> validIds = scripts
+              .map((GeneratedScript script) => script.id)
+              .toSet();
+
+          if (_selectedScriptIds.any((String id) => !validIds.contains(id))) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) {
+                return;
+              }
+              setState(() {
+                _selectedScriptIds.removeWhere(
+                  (String id) => !validIds.contains(id),
+                );
+              });
+            });
+          }
+
+          final int total = scripts.length;
+
+          final Widget listContent = scripts.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      'Scripts you generate will appear here. Create one from the CONFIGURE tab to get started.',
+                      style: theme.textTheme.bodyMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                )
+              : ListView.builder(
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    0,
+                    16,
+                    _selectedScriptIds.isNotEmpty ? 96 : 20,
+                  ),
+                  itemCount: scripts.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    final GeneratedScript script = scripts[index];
+                    final bool isSelected = _selectedScriptIds.contains(
+                      script.id,
+                    );
+                    return _buildSavedScriptCard(script, isSelected, theme);
+                  },
+                );
+
+          return Stack(
+            children: <Widget>[
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+                    child: Row(
+                      children: <Widget>[
+                        Expanded(
+                          child: Text(
+                            '$total saved script${total == 1 ? '' : 's'}',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: total == 0
+                              ? null
+                              : () => _confirmDeleteAllScripts(total),
+                          child: const Text('Delete all'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(child: listContent),
+                ],
+              ),
+              if (_selectedScriptIds.isNotEmpty) _buildSelectionBar(theme),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   void _copyScript(BuildContext context, String script) {
     Clipboard.setData(ClipboardData(text: script));
     ScaffoldMessenger.of(
@@ -175,6 +629,7 @@ class _ConfigScreenState extends State<ConfigScreen>
           tabs: const <Widget>[
             Tab(text: 'CONFIGURE'),
             Tab(text: 'SCRIPT'),
+            Tab(text: 'SAVED'),
           ],
         ),
       ),
@@ -432,6 +887,7 @@ class _ConfigScreenState extends State<ConfigScreen>
                     ),
             ),
           ),
+          _buildSavedTab(theme),
         ],
       ),
     );

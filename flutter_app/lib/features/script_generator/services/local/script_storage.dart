@@ -37,6 +37,9 @@ class ScriptStorage {
     required String style,
     required String content,
     required bool usedHostedGenerator,
+    String? cta,
+    int? temperature,
+    int? length,
   }) async {
     final GeneratedScript script = GeneratedScript(
       id: _generateId(),
@@ -45,6 +48,9 @@ class ScriptStorage {
       content: content,
       createdAt: DateTime.now(),
       usedHostedGenerator: usedHostedGenerator,
+      cta: cta,
+      temperature: temperature,
+      length: length,
     );
 
     await _box().put(script.id, script);
@@ -53,13 +59,27 @@ class ScriptStorage {
 
   static List<GeneratedScript> getScripts() {
     final List<GeneratedScript> scripts = _box().values.toList(growable: false);
-    scripts.sort((GeneratedScript a, GeneratedScript b) =>
-        b.createdAt.compareTo(a.createdAt));
+    scripts.sort(
+      (GeneratedScript a, GeneratedScript b) =>
+          b.createdAt.compareTo(a.createdAt),
+    );
     return scripts;
   }
 
   static Future<void> deleteScript(String id) async {
     await _box().delete(id);
+  }
+
+  static Future<void> deleteScripts(Iterable<String> ids) async {
+    await _box().deleteAll(ids);
+  }
+
+  static Future<void> deleteAll() async {
+    await _box().clear();
+  }
+
+  static GeneratedScript? getScript(String id) {
+    return _box().get(id);
   }
 
   static String _generateId() {

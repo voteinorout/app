@@ -259,15 +259,6 @@ class HomeScreen extends StatelessWidget {
               ),
               _featureCard(
                 context,
-                icon: Icons.folder_outlined,
-                title: 'Saved Scripts',
-                description:
-                    'Access scripts stored securely on this device—no account required.',
-                cta: 'View saved scripts',
-                onPressed: () => Navigator.pushNamed(context, '/saved-scripts'),
-              ),
-              _featureCard(
-                context,
                 icon: Icons.shield_outlined,
                 title: 'Fallacy Fighter',
                 description:
