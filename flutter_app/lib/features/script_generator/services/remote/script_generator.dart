@@ -33,6 +33,7 @@ class ScriptGenerator {
   }) async {
     _lastRunWarning = null;
     final String trimmedCta = (cta ?? '').trim();
+    const List<String> factList = <String>[];
 
     final String? remoteScript = await OpenAIService.generateJsonScript(
       topic: topic,
@@ -58,11 +59,17 @@ class ScriptGenerator {
           temperature: temperature,
         );
       }
-      return _ensureBeatCoverage(
+      final String ensured = _ensureBeatCoverage(
         formatted,
         _beatSlots.length,
         fallbackSegments: supplementSegments,
       );
+      final String withFacts = _injectFactsIntoScript(
+        ensured,
+        factList,
+        style,
+      );
+      return _appendEnhancementCallout(withFacts);
     }
 
     _lastRunUsedHosted = false;
@@ -94,7 +101,7 @@ class ScriptGenerator {
       final ScriptSegment segment = localSegments[i];
       final _BeatSlot slot = _beatSlots[i];
       buffer.writeln('**${slot.label} (${slot.rangeString}):**');
-      buffer.writeln('Voiceover: ${segment.voiceover}');
+      buffer.writeln(segment.voiceover.trim());
       if (segment.visualsActions.isNotEmpty) {
         buffer.writeln('Visuals: ${segment.visualsActions}');
       }
@@ -114,7 +121,12 @@ class ScriptGenerator {
     _lastRunWarning =
         LocalLlmService.lastError ??
         'Hosted script generation failed; using deterministic fallback.';
-    return ensured;
+    final String withFacts = _injectFactsIntoScript(
+      ensured,
+      factList,
+      style,
+    );
+    return _appendEnhancementCallout(withFacts);
   }
 
   static List<ScriptSegment> _parseSegments(String rawContent, int length) {
@@ -201,6 +213,52 @@ class ScriptGenerator {
     int length,
   ) => _parseSegments(rawContent, length);
 
+  static String _injectFactsIntoScript(
+    String script,
+    List<String> facts,
+    String style,
+  ) {
+    final String trimmed = script.trimRight();
+    if (facts.isEmpty) {
+      return trimmed;
+    }
+
+    final List<String> normalizedFacts = facts
+        .map(
+          (String fact) => fact
+              .replaceAll(RegExp(r'\s+'), ' ')
+              .replaceAll(RegExp(r'[\uFFFC\uFE0F]'), '')
+              .trim(),
+        )
+        .where((String fact) => fact.isNotEmpty)
+        .toList(growable: false);
+
+    if (normalizedFacts.isEmpty) {
+      return trimmed;
+    }
+
+    final StringBuffer buffer = StringBuffer(trimmed)
+      ..writeln()
+      ..writeln()
+      ..writeln('Additional context:');
+    for (final String fact in normalizedFacts) {
+      buffer.writeln('- ${fact.trim()}');
+    }
+
+    return buffer.toString();
+  }
+
+  static String _appendEnhancementCallout(String script) {
+    final String trimmed = script.trimRight();
+    if (trimmed.isEmpty ||
+        trimmed.contains('Want to strengthen this message?')) {
+      return trimmed;
+    }
+    const String callout =
+        '\n\n\nWant to strengthen this message?\n\nPaste the script into your favorite AI tool (like ChatGPT, Gemini or Claude) and ask it to keep the same tone and tempo while improving clarity, sharpening the message, or adding anything it missed. Tailor it to your voice, your community, or your call to action.';
+    return '$trimmed\n\n$callout';
+  }
+
   static int _coerceStartTime(dynamic value, int fallback) {
     if (value is int) {
       return value;
@@ -264,6 +322,10 @@ class ScriptGenerator {
     }
     String formattedScript = formatted.join('\n');
     formattedScript = formattedScript.replaceAllMapped(
+      RegExp(r'(^|\n)(\s*)Voiceover:\s*', caseSensitive: false),
+      (Match m) => '${m.group(1)}${m.group(2)}',
+    );
+    formattedScript = formattedScript.replaceAllMapped(
       RegExp(r'(^|\n)Visuals:\s*(.*)'),
       (Match m) => '${m.group(1)}> *Visuals:* ${m.group(2)}',
     );
@@ -314,7 +376,7 @@ class ScriptGenerator {
           fallbackSegment != null && fallbackSegment.voiceover.trim().isNotEmpty
           ? fallbackSegment.voiceover.trim()
           : 'Reinforce the story arc with a concrete stat or named source that keeps momentum strong.';
-      buffer.writeln('Voiceover: $fallbackVoiceover');
+      buffer.writeln(fallbackVoiceover);
       final String fallbackVisuals =
           fallbackSegment != null &&
               fallbackSegment.visualsActions.trim().isNotEmpty

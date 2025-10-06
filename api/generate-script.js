@@ -48,6 +48,8 @@ Every beat must explicitly acknowledge or escalate what came before so the scrip
 
 Guidelines:
 - Use sharp humor, puns, and fluid, non-repetitive metaphors tailored to the topic.
+- Focus on concise, fact-heavy delivery, avoiding repetition, with dates, names, and laws spelled out.
+- Tailor to a U.S. audience concerned with state rights and democracy, emphasizing urgency and legal clarity.
 - Voiceover must flow as complete sentences—never bullet fragments.
 - Visuals should suggest clear, vivid shots or actions that match the voiceover.
 - Never mention on-screen text or captions.

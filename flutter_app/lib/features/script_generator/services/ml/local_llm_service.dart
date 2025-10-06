@@ -223,6 +223,12 @@ class LocalLlmService {
             : '- Keep it quick, warm, and just mischievous enough to stay memorable.',
       )
       ..writeln(
+        '- Focus on concise, fact-heavy delivery, avoiding repetition, with dates, names, and laws spelled out.',
+      )
+      ..writeln(
+        '- Tailor to a U.S. audience concerned with state rights and democracy, emphasizing urgency and legal clarity.',
+      )
+      ..writeln(
         '- If a CTA is provided, weave it naturally into the Final CTA beat; otherwise invent a specific, time-bound action.',
       );
 

@@ -404,49 +404,31 @@ class _ConfigScreenState extends State<ConfigScreen>
   }
 
   String _truncateScript(String content) {
-    String _stripPrefixes(String value) {
-      String working = value.trim();
-      final RegExp prefixPattern = RegExp(
-        r'^(?:hook[^:]*:|voiceover:|visuals:?|final cta:?|cta:?|beat\s+\d+:|key beat[^:]*:)',
-        caseSensitive: false,
+    final RegExp hookPattern = RegExp(
+      r'\*\*Hook[^:]*:\*\*\s*(.*)',
+      caseSensitive: false,
+    );
+    final Match? hookMatch = hookPattern.firstMatch(content);
+    String candidate;
+    if (hookMatch != null) {
+      candidate = hookMatch.group(1)?.trim() ?? content.trim();
+    } else {
+      final List<String> lines = content.split('\n');
+      final String? firstNonEmpty = lines.firstWhere(
+        (String line) => line.trim().isNotEmpty,
+        orElse: () => '',
       );
-      while (true) {
-        final RegExpMatch? match = prefixPattern.firstMatch(working);
-        if (match == null || match.start != 0) {
-          break;
-        }
-        working = working.substring(match.end).trim();
-      }
-      if (working.startsWith('>')) {
-        return '';
-      }
-      return working;
+      candidate = firstNonEmpty?.trim() ?? content.trim();
     }
 
-    final List<String> lines = content.split('\n');
-    String? firstSentence;
-
-    for (final String rawLine in lines) {
-      final String trimmed = rawLine.trim();
-      if (trimmed.isEmpty) {
-        continue;
-      }
-      final String stripped = _stripPrefixes(trimmed);
-      if (stripped.isEmpty) {
-        continue;
-      }
-      firstSentence = stripped;
-      break;
-    }
-
-    final String normalized = (firstSentence ?? content)
+    final String normalized = candidate
         .replaceAll(RegExp(r'[\*_#>`~-]'), '')
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
     if (normalized.isEmpty) {
       return 'Untitled script';
     }
-    const int maxWords = 14;
+    const int maxWords = 20;
     final List<String> words = normalized.split(' ');
     if (words.length <= maxWords) {
       return normalized;
