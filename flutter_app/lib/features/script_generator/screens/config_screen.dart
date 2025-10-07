@@ -847,7 +847,7 @@ class _ConfigScreenState extends State<ConfigScreen>
                                       ),
                                       const SizedBox(height: 8),
                                       Text(
-                                        'Paste the script into your favorite AI tool (like ChatGPT, Gemini or Claude) and ask it to keep the same tone and tempo while improving clarity, sharpening the message, or adding anything it missed. Tailor it to your voice, your community, or your call to action.',
+                                        'Drop this into your favorite AI tool (like ChatGPT or Claude) and ask it to improve clarity, keep the same tone, and sharpen your message.',
                                         style: theme.textTheme.bodySmall?.copyWith(
                                           color: theme.colorScheme.onSurface
                                               .withValues(alpha: 0.6),
