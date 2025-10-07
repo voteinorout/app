@@ -1,7 +1,7 @@
 name: vioo_app
 description: A minimal Flutter app scaffold created by the assistant
 publish_to: 'none'
-version: 0.0.1
+version: 1.0.0+1
 
 environment:
   sdk: '>=3.9.0 <4.0.0'
@@ -31,6 +31,7 @@ dev_dependencies:
   integration_test:
     sdk: flutter
   firebase_auth_mocks: ^0.15.1
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
@@ -38,3 +39,9 @@ flutter:
     - assets/models/local_llm.tflite
     - assets/logo-vioo-white.svg
     - assets/logo-vioo-navy.svg
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/icon_vioo.png"
+  min_sdk_android: 21
