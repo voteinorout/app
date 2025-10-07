@@ -6,6 +6,7 @@ ENV['LANG'] = 'en_US.UTF-8'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+inhibit_all_warnings!
 
 project 'Runner', {
   'Debug' => :debug,
