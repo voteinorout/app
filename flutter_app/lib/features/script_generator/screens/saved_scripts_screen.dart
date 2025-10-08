@@ -101,7 +101,8 @@ class SavedScriptsScreen extends StatelessWidget {
                 ),
               );
             },
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            separatorBuilder: (BuildContext context, int index) =>
+                const SizedBox(height: 12),
             itemCount: scripts.length,
           );
         },

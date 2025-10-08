@@ -1,7 +1,9 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:vioo_app/features/script_generator/models/generated_script.dart';
 import 'package:vioo_app/features/script_generator/services/local/script_storage.dart';
 import 'package:vioo_app/features/script_generator/services/remote/script_generator.dart';
@@ -19,12 +21,14 @@ class _ConfigScreenState extends State<ConfigScreen>
   final TextEditingController _ctaController = TextEditingController();
   final TextEditingController _topicController = TextEditingController();
   late final ScrollController _scriptScrollController;
+  late final TapGestureRecognizer _chatGptRecognizer;
 
   static const Map<String, int> _styleTemperatureDefaults = <String, int>{
     'Educational': 3,
     'Motivational': 6,
     'Comedy': 8,
   };
+  static final Uri _chatGptUri = Uri.parse('https://chatgpt.com/');
 
   late TabController _tabController;
   String _style = 'Educational';
@@ -39,6 +43,7 @@ class _ConfigScreenState extends State<ConfigScreen>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _scriptScrollController = ScrollController();
+    _chatGptRecognizer = TapGestureRecognizer()..onTap = _launchChatGpt;
   }
 
   @override
@@ -46,6 +51,7 @@ class _ConfigScreenState extends State<ConfigScreen>
     _ctaController.dispose();
     _topicController.dispose();
     _scriptScrollController.dispose();
+    _chatGptRecognizer.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -145,6 +151,28 @@ class _ConfigScreenState extends State<ConfigScreen>
         setState(() => _isSubmitting = false);
       }
     }
+  }
+
+  Future<void> _launchChatGpt() async {
+    try {
+      final bool launched = await launchUrl(
+        _chatGptUri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched && mounted) {
+        _showChatGptLaunchError();
+      }
+    } catch (_) {
+      if (mounted) {
+        _showChatGptLaunchError();
+      }
+    }
+  }
+
+  void _showChatGptLaunchError() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Unable to open ChatGPT.')),
+    );
   }
 
   void _loadSavedScript(GeneratedScript script) {
@@ -414,11 +442,13 @@ class _ConfigScreenState extends State<ConfigScreen>
       candidate = hookMatch.group(1)?.trim() ?? content.trim();
     } else {
       final List<String> lines = content.split('\n');
-      final String? firstNonEmpty = lines.firstWhere(
+      final String firstNonEmpty = lines.firstWhere(
         (String line) => line.trim().isNotEmpty,
         orElse: () => '',
       );
-      candidate = firstNonEmpty?.trim() ?? content.trim();
+      candidate = firstNonEmpty.trim().isNotEmpty
+          ? firstNonEmpty.trim()
+          : content.trim();
     }
 
     final String normalized = candidate
@@ -491,8 +521,17 @@ class _ConfigScreenState extends State<ConfigScreen>
     return SafeArea(
       child: ValueListenableBuilder<Box<GeneratedScript>>(
         valueListenable: ScriptStorage.listenable(),
-        builder: (BuildContext context, Box<GeneratedScript> _, __) {
-          final List<GeneratedScript> scripts = ScriptStorage.getScripts();
+        builder: (
+          BuildContext context,
+          Box<GeneratedScript> box,
+          Widget? _,
+        ) {
+          final List<GeneratedScript> scripts = box.values
+              .toList(growable: false)
+            ..sort(
+              (GeneratedScript a, GeneratedScript b) =>
+                  b.createdAt.compareTo(a.createdAt),
+            );
           final Set<String> validIds = scripts
               .map((GeneratedScript script) => script.id)
               .toSet();
@@ -838,7 +877,7 @@ class _ConfigScreenState extends State<ConfigScreen>
                                       ),
                                       const SizedBox(height: 32),
                                       Text(
-                                        'Want to strengthen this message?',
+                                        'Bring this script to the next level',
                                         style: theme.textTheme.bodySmall?.copyWith(
                                           fontWeight: FontWeight.w700,
                                           color: theme.colorScheme.onSurface
@@ -846,12 +885,32 @@ class _ConfigScreenState extends State<ConfigScreen>
                                         ),
                                       ),
                                       const SizedBox(height: 8),
-                                      Text(
-                                        'Drop this into your favorite AI tool (like ChatGPT or Claude) and ask it to improve clarity, keep the same tone, and sharpen your message.',
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          color: theme.colorScheme.onSurface
-                                              .withValues(alpha: 0.6),
-                                          height: 1.4,
+                                      RichText(
+                                        text: TextSpan(
+                                          style: theme.textTheme.bodySmall?.copyWith(
+                                            color: theme.colorScheme.onSurface
+                                                .withValues(alpha: 0.6),
+                                            height: 1.4,
+                                          ),
+                                          children: <InlineSpan>[
+                                            const TextSpan(
+                                              text:
+                                                  'Paste this into your favorite AI tool (e.g. ',
+                                            ),
+                                            TextSpan(
+                                              text: 'ChatGPT',
+                                              style: theme.textTheme.bodySmall?.copyWith(
+                                                color: theme.colorScheme.primary,
+                                                height: 1.4,
+                                                decoration: TextDecoration.underline,
+                                              ),
+                                              recognizer: _chatGptRecognizer,
+                                            ),
+                                            const TextSpan(
+                                              text:
+                                                  ') and ask it to improve clarity and sharpen your message.',
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],
