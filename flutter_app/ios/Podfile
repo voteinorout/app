@@ -33,6 +33,9 @@ flutter_ios_podfile_setup
 
 target 'Runner' do
   use_frameworks! :linkage => :static
+  # Add Firebase pods
+  pod 'Firebase/Core'
+  pod 'Firebase/Auth'
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do
     inherit! :search_paths
