@@ -150,15 +150,24 @@ class LocalLlmService {
     required List<String> searchFacts,
   }) {
     final String trimmedStyle = style.trim();
+    final String normalizedStyle = trimmedStyle.toLowerCase();
     final bool hasExplicitStyle =
-        trimmedStyle.isNotEmpty && trimmedStyle.toLowerCase() != 'other';
-    final String tone = hasExplicitStyle
-        ? trimmedStyle
-        : 'lighthearted and comedic';
+        trimmedStyle.isNotEmpty && normalizedStyle != 'other';
+    final bool isEducationalStyle = normalizedStyle == 'educational';
+    final String tone = isEducationalStyle
+        ? 'clear, direct, and factual'
+        : hasExplicitStyle
+            ? trimmedStyle
+            : 'straightforward and authentic';
     final List<String> cleanedFacts = _prepareFacts(searchFacts);
     final String factsInstruction = cleanedFacts.isNotEmpty
         ? 'Integrate every one of these facts somewhere in the script, quoting each number or named detail plainly and exactly once: ${cleanedFacts.join('; ')}. Do not paraphrase away the numbers, and never invent new data.'
         : 'Ground each beat in believable, specific, verifiable details without inventing statistics.';
+    final String styleDirective = isEducationalStyle
+        ? 'Use only clear, direct, and factual language with no metaphors, analogies, or figurative expressions, like a trusted expert delivering straightforward information to a concerned audience.'
+        : hasExplicitStyle
+            ? 'Match that tone in every beat without drifting.'
+            : 'Use clear, direct language that feels real and grounded, like a trusted friend speaking plainly.';
 
     final StringBuffer buffer = StringBuffer()
       ..writeln(
@@ -187,10 +196,14 @@ class LocalLlmService {
       ..writeln('For each beat, output exactly this format:')
       ..writeln('**Hook (0-6s):**')
       ..writeln(
-        'Voiceover: <3-4 sentences, 35-45 words, propelling the story forward with vivid specificity>',
+        isEducationalStyle
+            ? 'Voiceover: <2-3 sentences, 25-35 words, clear and conversational, driving the story forward>'
+            : 'Voiceover: <3-4 sentences, 35-45 words, propelling the story forward with vivid specificity>',
       )
       ..writeln(
-        'Visuals: <one dynamic sentence suggesting kinetic supporting footage>',
+        isEducationalStyle
+            ? 'Visuals: <one concise sentence suggesting realistic, straightforward footage that directly supports the voiceover’s factual content, avoiding playful or exaggerated imagery>'
+            : 'Visuals: <one dynamic sentence suggesting kinetic supporting footage>',
       );
 
     if (cleanedFacts.isNotEmpty) {
@@ -204,32 +217,40 @@ class LocalLlmService {
       ..writeln()
       ..writeln('Guidelines:')
       ..writeln(
-        '- Create a seamless narrative arc where every beat references or escalates the one before it.',
+        isEducationalStyle
+            ? '- Use direct, conversational language, avoiding rhetorical questions, puns, metaphors, analogies, or figurative language (e.g., avoid phrases like "twist in the tale," "circus act," or "smooth sailing"). Use precise, literal descriptions only.'
+            : '- Create a seamless narrative arc where every beat references or escalates the one before it.',
       )
       ..writeln(
-        '- Use sharp humor, puns, and fluid metaphors tailored to the topic without repeating opening words.',
+        isEducationalStyle
+            ? '- Keep it fact-heavy, concise, and specific, spelling out dates, names, and laws clearly. Prioritize verifiable details (numbers, dates, names) over narrative flair or emotional embellishment.'
+            : '- Use sharp humor, puns, and fluid metaphors tailored to the topic without repeating opening words.',
       )
       ..writeln(
         '- Voiceover must flow as complete sentences; avoid bullet fragments.',
       )
       ..writeln(
-        '- Visuals should suggest clear, vivid shots or actions that match the voiceover.',
+        isEducationalStyle
+            ? '- Visuals should suggest simple, authentic shots that match the voiceover’s tone.'
+            : '- Visuals should suggest clear, vivid shots or actions that match the voiceover.',
       )
       ..writeln('- Never mention on-screen text or captions.')
       ..writeln('- $factsInstruction')
       ..writeln(
-        hasExplicitStyle
-            ? '- Match that tone in every beat without drifting.'
-            : '- Keep it quick, warm, and just mischievous enough to stay memorable.',
+        isEducationalStyle
+            ? '- Avoid repetitive words or clichéd openers like "imagine" or "picture."'
+            : '- Focus on concise, fact-heavy delivery, avoiding repetition, with dates, names, and laws spelled out.',
+      )
+      ..writeln('- $styleDirective')
+      ..writeln(
+        isEducationalStyle
+            ? '- Tailor to a U.S. audience focused on state rights and democracy, emphasizing urgency and clarity.'
+            : '- Tailor to a U.S. audience concerned with state rights and democracy, emphasizing urgency and legal clarity.',
       )
       ..writeln(
-        '- Focus on concise, fact-heavy delivery, avoiding repetition, with dates, names, and laws spelled out.',
-      )
-      ..writeln(
-        '- Tailor to a U.S. audience concerned with state rights and democracy, emphasizing urgency and legal clarity.',
-      )
-      ..writeln(
-        '- If a CTA is provided, weave it naturally into the Final CTA beat; otherwise invent a specific, time-bound action.',
+        isEducationalStyle
+            ? '- If a CTA is provided, weave it into 2-3 clear, action-oriented sentences (25-35 words total) with a fact-based lead-in, focusing on specific, measurable outcomes.'
+            : '- If a CTA is provided, weave it naturally into the Final CTA beat; otherwise invent a specific, time-bound action.',
       );
 
     return buffer.toString();
@@ -241,13 +262,14 @@ class LocalLlmService {
     required String style,
     required List<String> searchFacts,
   }) {
+    final String normalized = style.trim().toLowerCase();
+    final bool isEducationalStyle = normalized == 'educational';
     final String toneDescriptor = (() {
-      final String normalized = style.trim().toLowerCase();
       switch (normalized) {
         case 'motivational':
           return 'charged and optimistic';
         case 'educational':
-          return 'confidently informative';
+          return 'clear, direct, and factual';
         case 'comedy':
           return 'playfully sharp';
         case 'exciting':
@@ -349,6 +371,7 @@ class LocalLlmService {
       String? factPrompt,
       required String topicDisplay,
       required String toneDescriptor,
+      required bool isEducationalStyle,
     }) {
       final bool hasFact = (factPrompt ?? '').trim().isNotEmpty;
       final List<String> sentences = <String>[];
@@ -362,92 +385,177 @@ class LocalLlmService {
 
       switch (beat.label) {
         case 'Hook':
-          sentences.add(
-            ensureSentence(
-              'Hit the feed with a $toneDescriptor first line so $topicDisplay feels like breaking news, not background noise',
-            ),
-          );
-          final String factLine = factHighlight(
-            'Lead with the jaw-dropping proof:',
-          );
-          if (factLine.isNotEmpty) {
-            sentences.add(factLine);
+          if (isEducationalStyle) {
+            sentences.add(
+              ensureSentence(
+                'State plainly why $topicDisplay matters right now and who is affected.',
+              ),
+            );
+            final String factLine = factHighlight('Include the key data point upfront:');
+            if (factLine.isNotEmpty) {
+              sentences.add(factLine);
+            }
+            sentences.add(
+              ensureSentence(
+                'Set up the next beat with a direct question the viewer needs answered.',
+              ),
+            );
+          } else {
+            sentences.add(
+              ensureSentence(
+                'Hit the feed with a $toneDescriptor first line so $topicDisplay feels like breaking news, not background noise',
+              ),
+            );
+            final String factLine = factHighlight(
+              'Lead with the jaw-dropping proof:',
+            );
+            if (factLine.isNotEmpty) {
+              sentences.add(factLine);
+            }
+            sentences.add(
+              ensureSentence(
+                'Leave them hanging on a question the next beat must answer',
+              ),
+            );
           }
-          sentences.add(
-            ensureSentence(
-              'Leave them hanging on a question the next beat must answer',
-            ),
-          );
           break;
         case 'Spark':
-          sentences.add(
-            ensureSentence(
-              'Name the spark that proves this story is unfolding right now—who lit the fuse and why it matters tonight',
-            ),
-          );
-          final String factLine = factHighlight(
-            'Spell out the stakes they probably have not heard:',
-          );
-          if (factLine.isNotEmpty) {
-            sentences.add(factLine);
+          if (isEducationalStyle) {
+            sentences.add(
+              ensureSentence(
+                'Explain directly what triggered the issue and why it is unfolding now.',
+              ),
+            );
+            final String factLine = factHighlight('State the most relevant statistic or decision:');
+            if (factLine.isNotEmpty) {
+              sentences.add(factLine);
+            }
+            sentences.add(
+              ensureSentence(
+                'Clarify what the immediate implications are for people affected.',
+              ),
+            );
+          } else {
+            sentences.add(
+              ensureSentence(
+                'Name the spark that proves this story is unfolding right now—who lit the fuse and why it matters tonight',
+              ),
+            );
+            final String factLine = factHighlight(
+              'Spell out the stakes they probably have not heard:',
+            );
+            if (factLine.isNotEmpty) {
+              sentences.add(factLine);
+            }
+            sentences.add(
+              ensureSentence(
+                'Make the viewer feel the stakes tightening without losing momentum',
+              ),
+            );
           }
-          sentences.add(
-            ensureSentence(
-              'Make the viewer feel the stakes tightening without losing momentum',
-            ),
-          );
           break;
         case 'Proof':
-          sentences.add(
-            ensureSentence(
-              'Drop the receipts that lock the narrative in place: show what changed, who felt it, and how big the shift really is',
-            ),
-          );
-          final String factLine = factHighlight('Quote the evidence straight:');
-          if (factLine.isNotEmpty) {
-            sentences.add(factLine);
+          if (isEducationalStyle) {
+            sentences.add(
+              ensureSentence(
+                'Lay out the verified evidence: what happened, who is involved, and the measurable impact.',
+              ),
+            );
+            final String factLine = factHighlight('Present the supporting fact or quote:');
+            if (factLine.isNotEmpty) {
+              sentences.add(factLine);
+            }
+            sentences.add(
+              ensureSentence(
+                'Connect this evidence back to the catalyst so the timeline stays clear.',
+              ),
+            );
+          } else {
+            sentences.add(
+              ensureSentence(
+                'Drop the receipts that lock the narrative in place: show what changed, who felt it, and how big the shift really is',
+              ),
+            );
+            final String factLine = factHighlight('Quote the evidence straight:');
+            if (factLine.isNotEmpty) {
+              sentences.add(factLine);
+            }
+            sentences.add(
+              ensureSentence(
+                'Tie the evidence straight back to the spark so the arc stays seamless',
+              ),
+            );
           }
-          sentences.add(
-            ensureSentence(
-              'Tie the evidence straight back to the spark so the arc stays seamless',
-            ),
-          );
           break;
         case 'Turn':
-          sentences.add(
-            ensureSentence(
-              'Show the pivot—people flipping frustration into forward motion and inviting the viewer into that turn',
-            ),
-          );
-          final String factLine = factHighlight(
-            'Point to the momentum that proves the turn is real:',
-          );
-          if (factLine.isNotEmpty) {
-            sentences.add(factLine);
+          if (isEducationalStyle) {
+            sentences.add(
+              ensureSentence(
+                'Describe the concrete action or solution already underway and who is leading it.',
+              ),
+            );
+            final String factLine = factHighlight('Note the progress or benchmark achieved:');
+            if (factLine.isNotEmpty) {
+              sentences.add(factLine);
+            }
+            sentences.add(
+              ensureSentence(
+                'Preview the specific next step the viewer can contribute to.',
+              ),
+            );
+          } else {
+            sentences.add(
+              ensureSentence(
+                'Show the pivot—people flipping frustration into forward motion and inviting the viewer into that turn',
+              ),
+            );
+            final String factLine = factHighlight(
+              'Point to the momentum that proves the turn is real:',
+            );
+            if (factLine.isNotEmpty) {
+              sentences.add(factLine);
+            }
+            sentences.add(
+              ensureSentence(
+                'Set up the CTA by hinting at what scales if more of us join in',
+              ),
+            );
           }
-          sentences.add(
-            ensureSentence(
-              'Set up the CTA by hinting at what scales if more of us join in',
-            ),
-          );
           break;
         case 'Final CTA':
-          sentences.add(
-            ensureSentence(
-              'Deliver the CTA like a payoff: spell out the action, the urgency, and the emotional win for taking it now',
-            ),
-          );
-          final String factLine = factHighlight(
-            'Remind them what is on the line:',
-          );
-          if (factLine.isNotEmpty) {
-            sentences.add(factLine);
+          if (isEducationalStyle) {
+            sentences.add(
+              ensureSentence(
+                'State the action clearly, explain the urgency, and spell out the immediate benefit of acting now.',
+              ),
+            );
+            final String factLine = factHighlight('Restate the key consequence or opportunity:');
+            if (factLine.isNotEmpty) {
+              sentences.add(factLine);
+            }
+            sentences.add(
+              ensureSentence(
+                'Close with a direct instruction that tells viewers exactly what to do next.',
+              ),
+            );
+          } else {
+            sentences.add(
+              ensureSentence(
+                'Deliver the CTA like a payoff: spell out the action, the urgency, and the emotional win for taking it now',
+              ),
+            );
+            final String factLine = factHighlight(
+              'Remind them what is on the line:',
+            );
+            if (factLine.isNotEmpty) {
+              sentences.add(factLine);
+            }
+            sentences.add(
+              ensureSentence(
+                'Close with a vivid image or promise that sticks after the video ends',
+              ),
+            );
           }
-          sentences.add(
-            ensureSentence(
-              'Close with a vivid image or promise that sticks after the video ends',
-            ),
-          );
           break;
         default:
           final String factLine = factHighlight('Consider this detail:');
@@ -467,20 +575,33 @@ class LocalLlmService {
       required bool isFirst,
       required bool isLast,
       required int index,
+      required bool isEducationalStyle,
     }) {
       switch (beat.label) {
         case 'Hook':
-          return 'Open with a kinetic montage of headlines and close-up reactions that capture the jolt instantly.';
+          return isEducationalStyle
+              ? 'Open with straightforward footage: the key person, location, or document that proves the issue is immediate.'
+              : 'Open with a kinetic montage of headlines and close-up reactions that capture the jolt instantly.';
         case 'Spark':
-          return 'Cut into the catalyst—hands on the problem, text threads lighting up, the moment momentum catches.';
+          return isEducationalStyle
+              ? 'Show the triggering moment in simple, documentary-style shots—news clips, community meetings, or officials making the call.'
+              : 'Cut into the catalyst—hands on the problem, text threads lighting up, the moment momentum catches.';
         case 'Proof':
-          return 'Layer receipts: split screens of data, documentary textures, or on-the-ground testimonies synced to the stat.';
+          return isEducationalStyle
+              ? 'Highlight receipts clearly: charts, official statements, or side-by-side images that visualize the data.'
+              : 'Layer receipts: split screens of data, documentary textures, or on-the-ground testimonies synced to the stat.';
         case 'Turn':
-          return 'Show the pivot in action—neighbors linking arms, organizers planning, solutions already moving.';
+          return isEducationalStyle
+              ? 'Film the solution in progress—teams distributing resources, organizers briefing volunteers, measurable progress on screen.'
+              : 'Show the pivot in action—neighbors linking arms, organizers planning, solutions already moving.';
         case 'Final CTA':
-          return 'Close on a bold action tableau: a direct-to-camera appeal, on-screen sign-ups, or crowds moving with purpose.';
+          return isEducationalStyle
+              ? 'End with a direct-to-camera appeal or on-screen action steps that make the next move unmistakable.'
+              : 'Close on a bold action tableau: a direct-to-camera appeal, on-screen sign-ups, or crowds moving with purpose.';
         default:
-          return 'Keep the pace moving with handheld crowd shots and quick reaction cutaways; go tight on faces that show exactly what’s at stake.';
+          return isEducationalStyle
+              ? 'Keep shots steady and factual—real people, real locations, real documents that reinforce the message.'
+              : 'Keep the pace moving with handheld crowd shots and quick reaction cutaways; go tight on faces that show exactly what’s at stake.';
       }
     }
 
@@ -502,6 +623,7 @@ class LocalLlmService {
         factPrompt: factPrompt,
         topicDisplay: topicDisplay,
         toneDescriptor: toneDescriptor,
+        isEducationalStyle: isEducationalStyle,
       );
 
       final String visuals = buildVisuals(
@@ -509,6 +631,7 @@ class LocalLlmService {
         isFirst: isFirst,
         isLast: isLast,
         index: i,
+        isEducationalStyle: isEducationalStyle,
       );
 
       segments.add(<String, dynamic>{
@@ -535,6 +658,8 @@ class LocalLlmService {
       temperature == null || (temperature >= 0 && temperature <= 10),
       'Temperature should use the 0-10 scale before normalization.',
     );
+    final bool isEducationalStyle =
+        style.trim().toLowerCase() == 'educational';
     final String rawJson = _generateFallbackScript(
       topic: topic,
       length: length,
@@ -549,8 +674,8 @@ class LocalLlmService {
       final ScriptSegment last = segments.last;
       final String trimmedCta = cta?.trim() ?? '';
       final String appendedVoiceover = trimmedCta.isNotEmpty
-          ? '${last.voiceover} Your final push should invite the viewer to act right now: $trimmedCta.'
-          : '${last.voiceover} ${_craftInferredCtaSentence(topic)}';
+          ? '${last.voiceover} ${isEducationalStyle ? 'Act now: $trimmedCta.' : 'Your final push should invite the viewer to act right now: $trimmedCta.'}'
+          : '${last.voiceover} ${_craftInferredCtaSentence(topic, literal: isEducationalStyle)}';
       segments[segments.length - 1] = ScriptSegment(
         startTime: last.startTime,
         endTime: last.endTime,
@@ -772,8 +897,13 @@ class LocalLlmService {
     return fallback;
   }
 
-  static String _craftInferredCtaSentence(String topic) {
+  static String _craftInferredCtaSentence(String topic, {required bool literal}) {
     final String trimmed = topic.trim();
+    if (literal) {
+      final String subject =
+          trimmed.isEmpty ? 'this issue' : trimmed.toLowerCase();
+      return 'Take action today: share this update with someone you trust and agree on one concrete step about $subject.';
+    }
     if (trimmed.isEmpty) {
       return 'Give them a next step: share this with someone you trust and agree on one action to take today.';
     }

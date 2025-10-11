@@ -1026,6 +1026,18 @@ class _ConfigScreenState extends State<ConfigScreen>
                                   _copyScript(context, _generatedScript!),
                               child: const Text('Copy script'),
                             ),
+                          const SizedBox(height: 48),
+                          if (ScriptGenerator.lastRunWarning != null &&
+                              ScriptGenerator.lastRunWarning!
+                                  .toLowerCase()
+                                  .contains('fallback'))
+                            Text(
+                              '(Fallback LLM generation)',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.6),
+                              ),
+                            ),
                           ],
                         ),
                 ),
