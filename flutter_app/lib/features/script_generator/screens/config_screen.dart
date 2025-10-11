@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -7,6 +6,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:vioo_app/features/script_generator/models/generated_script.dart';
 import 'package:vioo_app/features/script_generator/services/local/script_storage.dart';
 import 'package:vioo_app/features/script_generator/services/remote/script_generator.dart';
+import 'package:vioo_app/features/script_generator/screens/widgets/input_sheet.dart';
+
+enum _ActiveInputField { topic, cta }
 
 class ConfigScreen extends StatefulWidget {
   const ConfigScreen({super.key});
@@ -20,8 +22,9 @@ class _ConfigScreenState extends State<ConfigScreen>
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _ctaController = TextEditingController();
   final TextEditingController _topicController = TextEditingController();
+  final FocusNode _topicFocusNode = FocusNode();
+  final FocusNode _ctaFocusNode = FocusNode();
   late final ScrollController _scriptScrollController;
-  late final TapGestureRecognizer _chatGptRecognizer;
 
   static const Map<String, int> _styleTemperatureDefaults = <String, int>{
     'Educational': 3,
@@ -29,6 +32,8 @@ class _ConfigScreenState extends State<ConfigScreen>
     'Comedy': 8,
   };
   static final Uri _chatGptUri = Uri.parse('https://chatgpt.com/');
+  static final Uri _claudeUri = Uri.parse('https://claude.ai/');
+  static final Uri _geminiUri = Uri.parse('https://gemini.google.com/');
 
   late TabController _tabController;
   String _style = 'Educational';
@@ -37,21 +42,23 @@ class _ConfigScreenState extends State<ConfigScreen>
   String? _generatedScript;
   bool _usedHostedGenerator = true;
   final Set<String> _selectedScriptIds = <String>{};
+  _ActiveInputField? _activeInputField;
+  bool _isSheetVisible = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _scriptScrollController = ScrollController();
-    _chatGptRecognizer = TapGestureRecognizer()..onTap = _launchChatGpt;
   }
 
   @override
   void dispose() {
     _ctaController.dispose();
     _topicController.dispose();
+    _topicFocusNode.dispose();
+    _ctaFocusNode.dispose();
     _scriptScrollController.dispose();
-    _chatGptRecognizer.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -153,26 +160,23 @@ class _ConfigScreenState extends State<ConfigScreen>
     }
   }
 
-  Future<void> _launchChatGpt() async {
+  void _showExternalLaunchError() {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Unable to open link.')));
+  }
+
+  Future<void> _launchExternalTool(Uri uri) async {
     try {
-      final bool launched = await launchUrl(
-        _chatGptUri,
-        mode: LaunchMode.externalApplication,
-      );
+      final bool launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!launched && mounted) {
-        _showChatGptLaunchError();
+        _showExternalLaunchError();
       }
     } catch (_) {
       if (mounted) {
-        _showChatGptLaunchError();
+        _showExternalLaunchError();
       }
     }
-  }
-
-  void _showChatGptLaunchError() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Unable to open ChatGPT.')),
-    );
   }
 
   void _loadSavedScript(GeneratedScript script) {
@@ -371,6 +375,34 @@ class _ConfigScreenState extends State<ConfigScreen>
     ).showSnackBar(const SnackBar(content: Text('Script copied to clipboard')));
   }
 
+  void _showInputSheet(_ActiveInputField field) {
+    if (_activeInputField == field && _isSheetVisible) {
+      return;
+    }
+    setState(() {
+      _activeInputField = field;
+      _isSheetVisible = true;
+    });
+  }
+
+  void _hideInputSheet() {
+    if (!_isSheetVisible) {
+      return;
+    }
+    setState(() {
+      _isSheetVisible = false;
+    });
+  }
+
+  void _handleSheetClosed() {
+    if (_isSheetVisible) {
+      return;
+    }
+    if (_activeInputField != null) {
+      setState(() => _activeInputField = null);
+    }
+  }
+
   void _showScriptActionSheet(GeneratedScript script) {
     final BuildContext rootContext = context;
     showModalBottomSheet<void>(
@@ -521,17 +553,12 @@ class _ConfigScreenState extends State<ConfigScreen>
     return SafeArea(
       child: ValueListenableBuilder<Box<GeneratedScript>>(
         valueListenable: ScriptStorage.listenable(),
-        builder: (
-          BuildContext context,
-          Box<GeneratedScript> box,
-          Widget? _,
-        ) {
-          final List<GeneratedScript> scripts = box.values
-              .toList(growable: false)
-            ..sort(
-              (GeneratedScript a, GeneratedScript b) =>
-                  b.createdAt.compareTo(a.createdAt),
-            );
+        builder: (BuildContext context, Box<GeneratedScript> box, Widget? _) {
+          final List<GeneratedScript> scripts =
+              box.values.toList(growable: false)..sort(
+                (GeneratedScript a, GeneratedScript b) =>
+                    b.createdAt.compareTo(a.createdAt),
+              );
           final Set<String> validIds = scripts
               .map((GeneratedScript script) => script.id)
               .toSet();
@@ -654,299 +681,376 @@ class _ConfigScreenState extends State<ConfigScreen>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Stack(
         children: <Widget>[
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: <Widget>[
-                            Text(
-                              'This tool turns key facts into viral scripts for any cause. Just gather 5–7 powerful stats, quotes, or insights tied to trends, impact, or common myths.',
-                              style: theme.textTheme.bodyMedium,
-                            ),
-                            const SizedBox(height: 20),
-                            TextFormField(
-                              controller: _topicController,
-                              keyboardType: TextInputType.multiline,
-                              minLines: 6,
-                              maxLines: 10,
-                              style: theme.textTheme.bodyMedium,
-                              decoration: const InputDecoration(
-                                labelText: 'Your big idea or topic',
-                                hintText: 'Write or paste here',
-                              ),
-                              validator: (String? value) =>
-                                  (value == null || value.trim().isEmpty)
-                                  ? 'Please describe the payoff or topic.'
-                                  : null,
-                            ),
-                            const SizedBox(height: 20),
-                            TextFormField(
-                              controller: _ctaController,
-                              keyboardType: TextInputType.multiline,
-                              minLines: 2,
-                              maxLines: 5,
-                              style: theme.textTheme.bodyMedium,
-                              decoration: const InputDecoration(
-                                labelText: 'Final call to action (optional)',
-                                hintText:
-                                    'e.g. Make a plan to vote at vote.org',
-                              ),
-                            ),
-                            const SizedBox(height: 20),
-                            InputDecorator(
-                              decoration: const InputDecoration(
-                                labelText: 'Style',
-                              ),
-                              child: DropdownButton<String>(
-                                value: _style,
-                                isExpanded: true,
-                                underline: const SizedBox.shrink(),
-                                items: const <DropdownMenuItem<String>>[
-                                  DropdownMenuItem(
-                                    value: 'Educational',
-                                    child: Text('Educational'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'Motivational',
-                                    child: Text('Motivational'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'Comedy',
-                                    child: Text('Comedy'),
-                                  ),
-                                ],
-                                onChanged: _isSubmitting
-                                    ? null
-                                    : (String? value) {
-                                        if (value == null) {
-                                          return;
-                                        }
-                                        setState(() {
-                                          _style = value;
-                                          _temperature =
-                                              _styleTemperatureDefaults[value]!;
-                                        });
-                                      },
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Center(
-                              child: TextButton(
-                                onPressed: _isSubmitting
-                                    ? null
-                                    : () {
-                                        _topicController.clear();
-                                        _ctaController.clear();
-                                        setState(() {
-                                          _style = 'Educational';
-                                          _temperature =
-                                              _styleTemperatureDefaults['Educational']!;
-                                        });
-                                      },
-                                style: TextButton.styleFrom(
-                                  padding: EdgeInsets.zero,
-                                  foregroundColor: theme.colorScheme.primary
-                                      .withValues(alpha: 0.8),
-                                ),
-                                child: const Text('Reset form'),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    ElevatedButton(
-                      style: primaryButtonStyle,
-                      onPressed: _isSubmitting ? null : _generateScript,
-                      child: _isSubmitting
-                          ? const SizedBox(
-                              height: 22,
-                              width: 22,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Generate script'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-              child: _generatedScript == null
-                  ? Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24.0),
-                        child: Text(
-                          'Generate a script in the CONFIGURE tab to view it here.',
-                          style: theme.textTheme.bodyMedium,
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    )
-                  : Column(
+          TabBarView(
+            controller: _tabController,
+            children: <Widget>[
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 24,
+                  ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
                         Expanded(
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.surface.withValues(
-                                alpha: 0.35,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Scrollbar(
-                                controller: _scriptScrollController,
-                                thumbVisibility: true,
-                                child: SingleChildScrollView(
-                                  controller: _scriptScrollController,
-                                  primary: false,
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: <Widget>[
-                                      Text(
-                                        'AI can hallucinate—always check facts before sharing.',
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(
-                                              color: theme.colorScheme.onSurface
-                                                  .withValues(alpha: 0.6),
-                                            ),
+                          child: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: <Widget>[
+                                Text(
+                                  'This tool turns key facts into viral scripts for any cause. Just gather 5–7 powerful stats, quotes, or insights tied to trends, impact, or common myths.',
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                                const SizedBox(height: 20),
+                                TextFormField(
+                                  controller: _topicController,
+                                  readOnly: true,
+                                  showCursor: true,
+                                  minLines: 6,
+                                  maxLines: 10,
+                                  style: theme.textTheme.bodyMedium,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Your big idea or topic',
+                                    hintText: 'Write or paste here',
+                                  ),
+                                  onTap: () =>
+                                      _showInputSheet(_ActiveInputField.topic),
+                                  validator: (String? value) =>
+                                      (value == null || value.trim().isEmpty)
+                                      ? 'Please describe the payoff or topic.'
+                                      : null,
+                                ),
+                                const SizedBox(height: 20),
+                                TextFormField(
+                                  controller: _ctaController,
+                                  readOnly: true,
+                                  showCursor: true,
+                                  minLines: 2,
+                                  maxLines: 5,
+                                  style: theme.textTheme.bodyMedium,
+                                  decoration: const InputDecoration(
+                                    labelText:
+                                        'Final call to action (optional)',
+                                    hintText:
+                                        'e.g. Make a plan to vote at vote.org',
+                                  ),
+                                  onTap: () =>
+                                      _showInputSheet(_ActiveInputField.cta),
+                                ),
+                                const SizedBox(height: 20),
+                                InputDecorator(
+                                  decoration: const InputDecoration(
+                                    labelText: 'Style',
+                                  ),
+                                  child: DropdownButton<String>(
+                                    value: _style,
+                                    isExpanded: true,
+                                    underline: const SizedBox.shrink(),
+                                    items: const <DropdownMenuItem<String>>[
+                                      DropdownMenuItem(
+                                        value: 'Educational',
+                                        child: Text('Educational'),
                                       ),
-                                      const SizedBox(height: 12),
-                                      MarkdownBody(
-                                        data: _generatedScript!,
-                                        selectable: true,
-                                        styleSheet:
-                                            MarkdownStyleSheet.fromTheme(
-                                              theme,
-                                            ).copyWith(
-                                              p: theme.textTheme.bodyMedium!
-                                                  .copyWith(height: 1.4),
-                                              strong: theme
-                                                  .textTheme
-                                                  .bodyMedium!
-                                                  .copyWith(
-                                                    fontWeight: FontWeight.w700,
-                                                  ),
-                                              blockquote: theme
-                                                  .textTheme
-                                                  .bodySmall!
-                                                  .copyWith(
-                                                    color: theme
-                                                        .colorScheme
-                                                        .onSurface
-                                                        .withValues(alpha: 0.6),
-                                                    height: 1.4,
-                                                  ),
-                                              blockquotePadding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 12,
-                                                  ).copyWith(top: 4, bottom: 2),
-                                              blockquoteDecoration:
-                                                  BoxDecoration(
-                                                    border: Border(
-                                                      left: BorderSide(
+                                      DropdownMenuItem(
+                                        value: 'Motivational',
+                                        child: Text('Motivational'),
+                                      ),
+                                      DropdownMenuItem(
+                                        value: 'Comedy',
+                                        child: Text('Comedy'),
+                                      ),
+                                    ],
+                                    onChanged: _isSubmitting
+                                        ? null
+                                        : (String? value) {
+                                            if (value == null) {
+                                              return;
+                                            }
+                                            setState(() {
+                                              _style = value;
+                                              _temperature =
+                                                  _styleTemperatureDefaults[value]!;
+                                            });
+                                          },
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Center(
+                                  child: TextButton(
+                                    onPressed: _isSubmitting
+                                        ? null
+                                        : () {
+                                            _topicController.clear();
+                                            _ctaController.clear();
+                                            setState(() {
+                                              _style = 'Educational';
+                                              _temperature =
+                                                  _styleTemperatureDefaults['Educational']!;
+                                            });
+                                          },
+                                    style: TextButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      foregroundColor: theme.colorScheme.primary
+                                          .withValues(alpha: 0.8),
+                                    ),
+                                    child: const Text('Reset form'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        ElevatedButton(
+                          style: primaryButtonStyle,
+                          onPressed: _isSubmitting ? null : _generateScript,
+                          child: _isSubmitting
+                              ? const SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text('Generate script'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 20,
+                  ),
+                  child: _generatedScript == null
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: Text(
+                              'Generate a script in the CONFIGURE tab to view it here.',
+                              style: theme.textTheme.bodyMedium,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: <Widget>[
+                            Expanded(
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.surface.withValues(
+                                    alpha: 0.35,
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Scrollbar(
+                                    controller: _scriptScrollController,
+                                    thumbVisibility: true,
+                                    child: SingleChildScrollView(
+                                      controller: _scriptScrollController,
+                                      primary: false,
+                                      padding: const EdgeInsets.all(16),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.stretch,
+                                        children: <Widget>[
+                                          Text(
+                                            'AI can hallucinate—always check facts before sharing.',
+                                            style: theme.textTheme.bodySmall
+                                                ?.copyWith(
+                                                  color: theme
+                                                      .colorScheme
+                                                      .onSurface
+                                                      .withValues(alpha: 0.6),
+                                                ),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          MarkdownBody(
+                                            data: _generatedScript!,
+                                            selectable: true,
+                                            styleSheet:
+                                                MarkdownStyleSheet.fromTheme(
+                                                  theme,
+                                                ).copyWith(
+                                                  p: theme.textTheme.bodyMedium!
+                                                      .copyWith(height: 1.4),
+                                                  strong: theme
+                                                      .textTheme
+                                                      .bodyMedium!
+                                                      .copyWith(
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                      ),
+                                                  blockquote: theme
+                                                      .textTheme
+                                                      .bodySmall!
+                                                      .copyWith(
                                                         color: theme
                                                             .colorScheme
                                                             .onSurface
                                                             .withValues(
-                                                              alpha: 0.12,
+                                                              alpha: 0.6,
                                                             ),
-                                                        width: 2,
+                                                        height: 1.4,
                                                       ),
-                                                    ),
+                                                  blockquotePadding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 12,
+                                                      ).copyWith(
+                                                        top: 4,
+                                                        bottom: 2,
+                                                      ),
+                                                  blockquoteDecoration:
+                                                      BoxDecoration(
+                                                        border: Border(
+                                                          left: BorderSide(
+                                                            color: theme
+                                                                .colorScheme
+                                                                .onSurface
+                                                                .withValues(
+                                                                  alpha: 0.12,
+                                                                ),
+                                                            width: 2,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                ),
+                                          ),
+                                          const SizedBox(height: 32),
+                                          Text(
+                                            'Now let’s make it great…',
+                                            style: theme.textTheme.titleMedium
+                                                ?.copyWith(
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'Take this script into your favorite AI tool for polish—their models can tighten pacing, add flair, or tweak tone.',
+                                            style: theme.textTheme.bodyMedium
+                                                ?.copyWith(
+                                                  color: theme
+                                                      .colorScheme
+                                                      .onSurface
+                                                      .withValues(alpha: 0.75),
+                                                ),
+                                          ),
+                                          const SizedBox(height: 20),
+                                          OutlinedButton(
+                                            onPressed: () =>
+                                                _launchExternalTool(_chatGptUri),
+                                            style: OutlinedButton.styleFrom(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                vertical: 18,
+                                              ),
+                                              textStyle: theme
+                                                  .textTheme.titleSmall
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w700,
                                                   ),
                                             ),
-                                      ),
-                                      const SizedBox(height: 32),
-                                      Text(
-                                        'Bring this script to the next level',
-                                        style: theme.textTheme.bodySmall?.copyWith(
-                                          fontWeight: FontWeight.w700,
-                                          color: theme.colorScheme.onSurface
-                                              .withValues(alpha: 0.6),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      RichText(
-                                        text: TextSpan(
-                                          style: theme.textTheme.bodySmall?.copyWith(
-                                            color: theme.colorScheme.onSurface
-                                                .withValues(alpha: 0.6),
-                                            height: 1.4,
+                                            child: const Text('OpenAI ChatGPT'),
                                           ),
-                                          children: <InlineSpan>[
-                                            const TextSpan(
-                                              text:
-                                                  'Paste this into your favorite AI tool (e.g. ',
-                                            ),
-                                            TextSpan(
-                                              text: 'ChatGPT',
-                                              style: theme.textTheme.bodySmall?.copyWith(
-                                                color: theme.colorScheme.primary,
-                                                height: 1.4,
-                                                decoration: TextDecoration.underline,
+                                          const SizedBox(height: 12),
+                                          OutlinedButton(
+                                            onPressed: () =>
+                                                _launchExternalTool(_claudeUri),
+                                            style: OutlinedButton.styleFrom(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                vertical: 18,
                                               ),
-                                              recognizer: _chatGptRecognizer,
+                                              textStyle: theme
+                                                  .textTheme.titleSmall
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
                                             ),
-                                            const TextSpan(
-                                              text:
-                                                  ') and ask it to improve clarity and sharpen your message.',
+                                            child:
+                                                const Text('Anthropic Claude'),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          OutlinedButton(
+                                            onPressed: () =>
+                                                _launchExternalTool(_geminiUri),
+                                            style: OutlinedButton.styleFrom(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                vertical: 18,
+                                              ),
+                                              textStyle: theme
+                                                  .textTheme.titleSmall
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
                                             ),
-                                          ],
-                                        ),
+                                            child: const Text('Google Gemini'),
+                                          ),
+                                        ],
                                       ),
-                                    ],
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                        ),
-                        if (!_usedHostedGenerator) ...<Widget>[
-                          const SizedBox(height: 12),
-                          Align(
-                            alignment: Alignment.center,
-                            child: Text(
-                              'Fallback script',
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.onSurface.withValues(
-                                  alpha: 0.5,
+                            if (!_usedHostedGenerator) ...<Widget>[
+                              const SizedBox(height: 12),
+                              Align(
+                                alignment: Alignment.center,
+                                child: Text(
+                                  'Fallback script',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.5),
+                                    letterSpacing: 0.4,
+                                  ),
                                 ),
-                                letterSpacing: 0.4,
                               ),
+                            ],
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              style: primaryButtonStyle,
+                              onPressed: () =>
+                                  _copyScript(context, _generatedScript!),
+                              child: const Text('Copy script'),
                             ),
-                          ),
-                        ],
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          style: primaryButtonStyle,
-                          onPressed: () =>
-                              _copyScript(context, _generatedScript!),
-                          child: const Text('Copy script'),
+                          ],
                         ),
-                      ],
-                    ),
-            ),
+                ),
+              ),
+              _buildSavedTab(theme),
+            ],
           ),
-          _buildSavedTab(theme),
+          InputSheet(
+            isVisible: _isSheetVisible,
+            controller: _activeInputField == _ActiveInputField.cta
+                ? _ctaController
+                : _topicController,
+            focusNode: _activeInputField == _ActiveInputField.cta
+                ? _ctaFocusNode
+                : _topicFocusNode,
+            title: _activeInputField == _ActiveInputField.cta
+                ? 'Final call to action (optional)'
+                : 'Your big idea or topic',
+            hintText: _activeInputField == _ActiveInputField.cta
+                ? 'e.g. Make a plan to vote at vote.org'
+                : 'Write or paste here',
+            minLines: _activeInputField == _ActiveInputField.cta ? 4 : 6,
+            onDismissRequested: _hideInputSheet,
+            onClosed: _handleSheetClosed,
+          ),
         ],
       ),
     );

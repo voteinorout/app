@@ -6,7 +6,7 @@ import 'package:vioo_app/shared/services/auth_service.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  static const String _supportEmail = 'voteinorout@gmail.com';
+  static const String _supportEmail = 'support@voteinorout.com';
   static const String _supportSubject = 'Comment or Feedback from App';
 
   Future<void> _launchSupportEmail(BuildContext context) async {
