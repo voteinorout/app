@@ -30,8 +30,8 @@ export default async function handler(req, res) {
       ? 'use clear, direct language that feels real and grounded, like a trusted friend speaking plainly'
       : `write in a ${normalizedStyle} tone, keeping it natural and conversational`;
   const factsInstruction = facts.length > 0
-    ? `Integrate every one of these facts somewhere in the script, quoting each number or named detail plainly and exactly once: ${facts.join('; ')}. Do not paraphrase away the numbers, and never invent new data.`
-    : 'Ground each beat in believable, specific, verifiable details without inventing statistics.';
+    ? `Heavily incorporate all provided facts into the script, using them as the core of each beat. Quote each number, date, name, or statistic plainly and exactly at least once, and reference or reuse facts multiple times across beats to build a detailed, evidence-based narrative. Do not paraphrase numbers or key details, and never invent new data. Facts: ${facts.join('; ')}.`
+    : 'Ground each beat in believable, specific, verifiable details (stats, dates, names) without inventing data.';
   const finalCtaVoiceover = trimmedCta
     ? `Voiceover: <write 2-3 sentences, 25-35 words, resolving with ${isEducationalStyle ? 'a clear, fact-based' : 'an inspiring'} lead-in to the CTA: "${trimmedCta}">`
     : `Voiceover: <write 2-3 sentences, 25-35 words, resolving with ${isEducationalStyle ? 'a clear, fact-based' : 'an inspiring'} lead-in to a CTA you invent from the story (make it concrete, time-bound, and action-oriented).>`;
@@ -41,81 +41,66 @@ export default async function handler(req, res) {
   const educationalCtaInstruction = trimmedCta
     ? `Use the provided CTA "${trimmedCta}" exactly. In the Final CTA beat, weave it into 2-3 clear, action-oriented sentences (25-35 words total) with a fact-based lead-in, focusing on specific, measurable outcomes.`
     : 'Invent a CTA that is concrete, time-bound, and measurable. In the Final CTA beat, weave it into 2-3 clear, action-oriented sentences (25-35 words total) with a fact-based lead-in.';
-  const prompt = isEducationalStyle
-    ? `You are a campaign storyteller crafting a ${totalLength}-second video script about "${topic}" in a ${styleDisplay} tone.
+  const baseBeats = `Break the story into these exact beats and label each with its timestamp:
+- Hook (0-6s) — deliver a bold opener that makes ${topic} impossible to ignore, starting with a key fact or stat from the provided facts.
+- Spark (6-12s) — explain the catalyst or stakes driving urgency right now, incorporating at least one fact or stat.
+- Proof (12-18s) — present the evidence, stat, or lived moment that makes the story undeniable, using multiple facts or stats.
+- Turn (18-24s) — pivot toward the hopeful path forward and show who is already driving it, backed by relevant facts or stats.
+- Final CTA (24-30s) — land the CTA with urgency, clarity, and emotional payoff, reinforced with a key fact or stat.`;
 
-Break the story into these exact beats and include each label with its timestamp:
-- Hook (0-6s) — grab attention with a clear, bold statement that feels real and relatable.
-- Spark (6-12s) — show why this matters now, using plain language to highlight urgency or stakes.
-- Proof (12-18s) — share a specific fact, story, or moment that grounds the issue in reality.
-- Turn (18-24s) — shift to a clear, hopeful action or stand, showing people taking control.
-- Final CTA (24-30s) — deliver the CTA with directness, urgency, and emotional weight.
+  const formatInstructions = (visualsLine) => `For each beat, output exactly this format:
 
-For each beat, output exactly this format:
+**Hook (0-6s):**
+Voiceover: <2-3 sentences, 25-35 words, clear and conversational, including at least one stat or fact to drive the story forward>
+Visuals: <${visualsLine}>`;
 
-**Hook (0-6s):**  
-Voiceover: <2-3 sentences, 25-35 words, clear and conversational, driving the story forward>  
-Visuals: <one concise sentence suggesting realistic, straightforward footage that directly supports the voiceover’s factual content, avoiding playful or exaggerated imagery>
-
-Every beat must connect to the previous one, forming a cohesive narrative that feels like one story.
-
-Guidelines:
-- Use direct, conversational language, avoiding rhetorical questions, puns, metaphors, analogies, or figurative language (e.g., avoid phrases like "twist in the tale," "circus act," or "smooth sailing"). Use precise, literal descriptions only.
-- Keep it fact-heavy, concise, and specific, spelling out dates, names, and laws clearly. Every beat must prioritize specific, verifiable details (e.g., numbers, dates, names) over narrative flair or emotional embellishment.
-- Tailor to a U.S. audience focused on state rights and democracy, emphasizing urgency and clarity.
-- Voiceover must use complete sentences, never fragments or bullet points.
-- Visuals should suggest simple, authentic shots that match the voiceover’s tone.
+  const educationalGuidelines = `Guidelines:
+- Use direct, conversational language, avoiding rhetorical questions, puns, metaphors, analogies, or figurative language (no playful imagery).
+- Prioritize verifiable facts (numbers, dates, names) over narrative flair.
+- Tailor to a U.S. audience focused on state rights and democracy.
+- Voiceover must use complete sentences; never bullet fragments.
+- Visuals should be simple, authentic shots that align with the voiceover.
 - Never mention on-screen text or captions.
 - **${factsInstruction}**
 - Avoid repetitive words or clichéd openers like "imagine" or "picture."
-- Always ${styleDirective}, keeping the tone grounded, factual, and engaging without exaggeration.
+- Always ${styleDirective}.
 - **${educationalCtaInstruction}**
-- Model the tone, structure, and clarity after this example:
-  **Hook (0–6s):**  
-  Voiceover: Wondering what’s really changed in the latest COVID vaccine guidelines? Let’s clear up the confusion.  
-  Visuals: A family sits at a kitchen table, reviewing a CDC webpage on a tablet.  
-  **Spark (6–12s):**  
-  Voiceover: The CDC still recommends COVID shots for everyone over 6 months old. The new language says it’s a shared decision between you and your doctor—but that’s always been the case.  
-  Visuals: A doctor discusses vaccine options with a patient in a calm office setting.  
-  **Proof (12–18s):**  
-  Voiceover: Only Moderna is FDA-approved for kids under 2. Some pediatricians lack pediatric doses due to differing CDC and FDA guidance, so call ahead.  
-  Visuals: A parent calls a pediatrician’s office while holding a child.  
-  **Turn (18–24s):**  
-  Voiceover: No prescription is needed for COVID shots. Pharmacies remain key, and insurers will cover CDC-recommended vaccines through 2026 for most people.  
-  Visuals: A person walks into a pharmacy and receives a vaccine from a pharmacist.  
-  **Final CTA (24–30s):**  
-  Voiceover: Boosters reduce serious illness risk by 70% early on and 50% by month ten. Check with your doctor or pharmacy today to stay protected.  
-  Visuals: A person gets vaccinated, then smiles and walks out of a pharmacy.
+- Keep each beat concise and literal while following the specified voiceover/visuals structure.`;
+
+  const defaultGuidelines = `Guidelines:
+- Use direct, conversational language; avoid rhetorical questions or overly poetic phrasing.
+- Keep it fact-heavy, concise, and specific—spell out dates, names, and laws clearly.
+- Tailor to a U.S. audience focused on state rights and democracy.
+- Voiceover must use complete sentences; never bullet fragments.
+- Visuals should suggest simple, grounded shots that match the voiceover.
+- Never mention on-screen text or captions.
+- **${factsInstruction}**
+- Avoid repetitive words or clichéd openers like "imagine" or "picture."
+- Always ${styleDirective}.
+- **${ctaGuideline} In the Final CTA beat, weave the CTA into 2-3 clear, action-oriented sentences (25-35 words total). Include all specifics like names, actions, or tags, supported by a stat if possible.**
+- Keep each beat tight and fact-dense while following the specified voiceover/visuals structure.`;
+
+  const prompt = isEducationalStyle
+    ? `You are a campaign storyteller crafting a ${totalLength}-second video script about "${topic}" in a ${styleDisplay} tone.
+
+${baseBeats}
+
+${formatInstructions('realistic, straightforward footage that directly supports the voiceover’s factual content, avoiding playful or exaggerated imagery')}
+
+Every beat must connect to the previous one, forming a cohesive narrative that feels like one story. Make the script fact-driven, using the provided facts as the primary content for each beat.
+
+${educationalGuidelines}
 
 Return only the formatted beats in plain text.`
     : `You are a campaign storyteller crafting a ${totalLength}-second video script about "${topic}" in a ${styleDisplay} tone.
 
-Break the story into these exact beats and include each label with its timestamp:
-- Hook (0-6s) — grab attention with a clear, bold statement that feels real and relatable.
-- Spark (6-12s) — show why this matters now, using plain language to highlight urgency or stakes.
-- Proof (12-18s) — share a specific fact, story, or moment that grounds the issue in reality.
-- Turn (18-24s) — shift to a clear, hopeful action or stand, showing people taking control.
-- Final CTA (24-30s) — deliver the CTA with directness, urgency, and emotional weight.
+${baseBeats}
 
-For each beat, output exactly this format:
+${formatInstructions('vivid, grounded footage')}
 
-**Hook (0-6s):**  
-Voiceover: <2-3 sentences, 25-35 words, clear and conversational, driving the story forward>  
-Visuals: <one concise sentence suggesting vivid, grounded footage>
+Every beat must connect to the previous one, forming a cohesive narrative that feels like one story. Make the script fact-driven, using the provided facts as the primary content for each beat.
 
-Every beat must connect to the previous one, forming a cohesive narrative that feels like one story.
-
-Guidelines:
-- Use direct, conversational language, avoiding rhetorical questions, puns, or overly poetic phrasing.
-- Keep it fact-heavy, concise, and specific, spelling out dates, names, and laws clearly.
-- Tailor to a U.S. audience focused on state rights and democracy, emphasizing urgency and clarity.
-- Voiceover must use complete sentences, never fragments or bullet points.
-- Visuals should suggest simple, authentic shots that match the voiceover’s tone.
-- Never mention on-screen text or captions.
-- **${factsInstruction}**
-- Avoid repetitive words or clichéd openers like "imagine" or "picture."
-- Always ${styleDirective}, keeping the tone grounded and engaging without exaggeration.
-- **${ctaGuideline} In the Final CTA beat, weave the CTA into 2-3 clear, action-oriented sentences (25-35 words total). Include all specifics like names, actions, or tags, delivering a direct, urgent call to action.**
+${defaultGuidelines}
 
 Return only the formatted beats in plain text.`;
 

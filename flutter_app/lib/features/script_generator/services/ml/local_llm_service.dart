@@ -161,13 +161,59 @@ class LocalLlmService {
             : 'straightforward and authentic';
     final List<String> cleanedFacts = _prepareFacts(searchFacts);
     final String factsInstruction = cleanedFacts.isNotEmpty
-        ? 'Integrate every one of these facts somewhere in the script, quoting each number or named detail plainly and exactly once: ${cleanedFacts.join('; ')}. Do not paraphrase away the numbers, and never invent new data.'
-        : 'Ground each beat in believable, specific, verifiable details without inventing statistics.';
+        ? 'Heavily incorporate all provided facts into the script, using them as the core of each beat. Quote each number, date, name, or statistic plainly and exactly at least once, reference or reuse facts multiple times across beats to build a detailed, evidence-based narrative, and never invent new data. Facts: ${cleanedFacts.join('; ')}.'
+        : 'Ground each beat in believable, specific, verifiable details (stats, dates, names) without inventing data.';
     final String styleDirective = isEducationalStyle
         ? 'Use only clear, direct, and factual language with no metaphors, analogies, or figurative expressions, like a trusted expert delivering straightforward information to a concerned audience.'
         : hasExplicitStyle
             ? 'Match that tone in every beat without drifting.'
             : 'Use clear, direct language that feels real and grounded, like a trusted friend speaking plainly.';
+
+    final List<String> beatInstructions = <String>[
+      'Hook (0-6s) — deliver a bold opener that makes $topic impossible to ignore, starting with a key fact or stat from the provided facts.',
+      'Spark (6-12s) — explain the catalyst or stakes driving urgency right now, incorporating at least one fact or stat.',
+      'Proof (12-18s) — present the evidence, stat, or lived moment that makes the story undeniable, using multiple facts or stats.',
+      'Turn (18-24s) — pivot toward the hopeful path forward and show who is already driving it, backed by relevant facts or stats.',
+      'Final CTA (24-30s) — land the CTA with urgency and clarity, reinforced with a key fact or stat.',
+    ];
+
+    final List<String> formatInstructions = <String>[
+      '**Hook (0-6s):**',
+      isEducationalStyle
+          ? 'Voiceover: <2-3 sentences, 25-35 words, clear and conversational, including at least one stat or fact to drive the story forward>'
+          : 'Voiceover: <2-3 sentences, 25-35 words, clear and conversational, including at least one concrete stat or fact to propel the story>',
+      isEducationalStyle
+          ? 'Visuals: <one concise sentence suggesting realistic, straightforward footage that directly supports the voiceover’s factual content, avoiding playful or exaggerated imagery>'
+          : 'Visuals: <one dynamic sentence suggesting kinetic supporting footage>',
+    ];
+
+    final List<String> guidelines = <String>[
+      isEducationalStyle
+          ? '- Use direct, conversational language, avoiding rhetorical questions, puns, metaphors, analogies, or figurative language (e.g., avoid phrases like "twist in the tale," "circus act," or "smooth sailing"). Use precise, literal descriptions only.'
+          : '- Create a seamless narrative arc where every beat references or escalates the one before it.',
+        isEducationalStyle
+            ? '- Keep it fact-heavy, concise, and specific, spelling out dates, names, and laws clearly. Weave multiple stats or facts into every beat when provided, prioritizing verifiable details over narrative flair.'
+            : '- Keep it fact-heavy, concise, and specific—use stats, dates, names, and laws clearly, weaving multiple facts where provided without losing momentum.',
+      '- Voiceover must flow as complete sentences; avoid bullet fragments.',
+      isEducationalStyle
+          ? '- Visuals should suggest simple, authentic shots that match the voiceover’s tone.'
+          : '- Visuals should suggest clear, vivid shots or actions that match the voiceover.',
+      '- Never mention on-screen text or captions.',
+      '- $factsInstruction',
+        isEducationalStyle
+            ? '- Avoid repetitive words or clichéd openers like "imagine" or "picture."'
+            : '- Avoid repetitive words or clichéd openers like "imagine" or "picture."',
+      '- $styleDirective',
+      isEducationalStyle
+          ? '- Keep each beat concise, literal, and fact-driven while following the specified voiceover/visuals structure.'
+          : '- Keep each beat tight and fact-dense while following the specified voiceover/visuals structure.',
+      isEducationalStyle
+          ? '- Tailor to a U.S. audience focused on state rights and democracy, emphasizing urgency and clarity.'
+          : '- Tailor to a U.S. audience concerned with state rights and democracy, emphasizing urgency and legal clarity.',
+      isEducationalStyle
+          ? '- If a CTA is provided, weave it into 2-3 clear, action-oriented sentences (25-35 words total) with a fact-based lead-in, focusing on specific, measurable outcomes.'
+          : '- If a CTA is provided, weave it naturally into the Final CTA beat with a concrete, time-bound action—include a supporting stat when available; otherwise invent a specific, measurable next step.',
+    ];
 
     final StringBuffer buffer = StringBuffer()
       ..writeln(
@@ -177,34 +223,10 @@ class LocalLlmService {
       ..writeln(
         'Break the story into these exact beats and include each label with its timestamp:',
       )
-      ..writeln(
-        '- Hook (0-6s) — deliver a bold opener that makes $topic impossible to ignore right now.',
-      )
-      ..writeln(
-        '- Spark (6-12s) — explain the catalyst or stakes that keep the viewer leaning in.',
-      )
-      ..writeln(
-        '- Proof (12-18s) — present the evidence, stat, or lived moment that makes the story undeniable.',
-      )
-      ..writeln(
-        '- Turn (18-24s) — pivot toward the hopeful path forward and show who is already driving it.',
-      )
-      ..writeln(
-        '- Final CTA (24-30s) — land the CTA with urgency, clarity, and emotional payoff.',
-      )
+      ..writeln(beatInstructions.join('\n'))
       ..writeln()
       ..writeln('For each beat, output exactly this format:')
-      ..writeln('**Hook (0-6s):**')
-      ..writeln(
-        isEducationalStyle
-            ? 'Voiceover: <2-3 sentences, 25-35 words, clear and conversational, driving the story forward>'
-            : 'Voiceover: <3-4 sentences, 35-45 words, propelling the story forward with vivid specificity>',
-      )
-      ..writeln(
-        isEducationalStyle
-            ? 'Visuals: <one concise sentence suggesting realistic, straightforward footage that directly supports the voiceover’s factual content, avoiding playful or exaggerated imagery>'
-            : 'Visuals: <one dynamic sentence suggesting kinetic supporting footage>',
-      );
+      ..writeln(formatInstructions.join('\n'));
 
     if (cleanedFacts.isNotEmpty) {
       buffer.writeln('\nWeave in and paraphrase relevant details from:');
@@ -216,42 +238,9 @@ class LocalLlmService {
     buffer
       ..writeln()
       ..writeln('Guidelines:')
-      ..writeln(
-        isEducationalStyle
-            ? '- Use direct, conversational language, avoiding rhetorical questions, puns, metaphors, analogies, or figurative language (e.g., avoid phrases like "twist in the tale," "circus act," or "smooth sailing"). Use precise, literal descriptions only.'
-            : '- Create a seamless narrative arc where every beat references or escalates the one before it.',
-      )
-      ..writeln(
-        isEducationalStyle
-            ? '- Keep it fact-heavy, concise, and specific, spelling out dates, names, and laws clearly. Prioritize verifiable details (numbers, dates, names) over narrative flair or emotional embellishment.'
-            : '- Use sharp humor, puns, and fluid metaphors tailored to the topic without repeating opening words.',
-      )
-      ..writeln(
-        '- Voiceover must flow as complete sentences; avoid bullet fragments.',
-      )
-      ..writeln(
-        isEducationalStyle
-            ? '- Visuals should suggest simple, authentic shots that match the voiceover’s tone.'
-            : '- Visuals should suggest clear, vivid shots or actions that match the voiceover.',
-      )
-      ..writeln('- Never mention on-screen text or captions.')
-      ..writeln('- $factsInstruction')
-      ..writeln(
-        isEducationalStyle
-            ? '- Avoid repetitive words or clichéd openers like "imagine" or "picture."'
-            : '- Focus on concise, fact-heavy delivery, avoiding repetition, with dates, names, and laws spelled out.',
-      )
-      ..writeln('- $styleDirective')
-      ..writeln(
-        isEducationalStyle
-            ? '- Tailor to a U.S. audience focused on state rights and democracy, emphasizing urgency and clarity.'
-            : '- Tailor to a U.S. audience concerned with state rights and democracy, emphasizing urgency and legal clarity.',
-      )
-      ..writeln(
-        isEducationalStyle
-            ? '- If a CTA is provided, weave it into 2-3 clear, action-oriented sentences (25-35 words total) with a fact-based lead-in, focusing on specific, measurable outcomes.'
-            : '- If a CTA is provided, weave it naturally into the Final CTA beat; otherwise invent a specific, time-bound action.',
-      );
+      ..writeln(guidelines.join('\n'))
+      ..writeln()
+      ..writeln('Every beat must connect to the previous one, forming a cohesive narrative that feels like one story. Make the script fact-driven, using the provided facts as the primary content for each beat.');
 
     return buffer.toString();
   }
