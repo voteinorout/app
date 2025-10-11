@@ -108,10 +108,11 @@ class VoteInOrOutApp extends StatelessWidget {
         ),
         cardTheme: CardThemeData(
           color: Colors.white,
-          elevation: 2,
-          shadowColor: _primaryNavy.withValues(alpha: 0.08),
+          elevation: 0,
+          shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
+            side: const BorderSide(color: Color(0xFFE5E7EA)),
           ),
           margin: const EdgeInsets.symmetric(vertical: 12),
         ),
@@ -136,7 +137,7 @@ class VoteInOrOutApp extends StatelessWidget {
         ).copyWith(
           bodyMedium: const TextStyle(fontSize: 16),
           bodyLarge: const TextStyle(fontSize: 16),
-          bodySmall: const TextStyle(fontSize: 16),
+          bodySmall: const TextStyle(fontSize: 14),
         ),
       ),
       initialRoute: '/splash',
