@@ -16,10 +16,10 @@ export default async function handler(req, res) {
   const rawTemperature = Number.isFinite(parsedTemperature) ? parsedTemperature : 6;
   const clampedTemperature = Math.max(0, Math.min(10, rawTemperature));
   const openAiTemperature = Number((clampedTemperature / 10).toFixed(2));
-  const styleDisplay = rawStyle.length === 0 ? 'lighthearted and comedic' : rawStyle;
+  const styleDisplay = rawStyle.length === 0 ? 'straightforward and authentic' : rawStyle;
   const styleDirective = rawStyle.length === 0
-    ? 'keep it quick, warm, and a little mischievous'
-    : `make every line feel ${rawStyle.toLowerCase()}`;
+    ? 'use clear, direct language that feels real and grounded, like a trusted friend speaking plainly'
+    : `write in a ${rawStyle.toLowerCase()} tone, keeping it natural and conversational`;
   const factsInstruction = facts.length > 0
     ? `Integrate every one of these facts somewhere in the script, quoting each number or named detail plainly and exactly once: ${facts.join('; ')}. Do not paraphrase away the numbers, and never invent new data.`
     : 'Ground each beat in believable, specific, verifiable details without inventing statistics.';
@@ -32,31 +32,31 @@ export default async function handler(req, res) {
   const prompt = `You are a campaign storyteller crafting a ${totalLength}-second video script about "${topic}" in a ${styleDisplay} tone.
 
 Break the story into these exact beats and include each label with its timestamp:
-- Hook (0-6s) — earn the scroll-stopping moment with a bold, curiosity-spiking opener.
-- Spark (6-12s) — reveal the catalyst or stakes that make the hook matter right now.
-- Proof (12-18s) — show the concrete evidence, stat, or lived moment that makes the story undeniable.
-- Turn (18-24s) — pivot toward the hopeful path forward, hinting at how momentum builds.
-- Final CTA (24-30s) — deliver the CTA with urgency, clarity, and emotional payoff.
+- Hook (0-6s) — grab attention with a clear, bold statement that feels real and relatable.
+- Spark (6-12s) — show why this matters now, using plain language to highlight urgency or stakes.
+- Proof (12-18s) — share a specific fact, story, or moment that grounds the issue in reality.
+- Turn (18-24s) — shift to a clear, hopeful action or stand, showing people taking control.
+- Final CTA (24-30s) — deliver the CTA with directness, urgency, and emotional weight.
 
 For each beat, output exactly this format:
 
 **Hook (0-6s):**  
-Voiceover: <3-4 sentences, 35-45 words, propelling the story forward with vivid specificity>  
-Visuals: <one dynamic sentence suggesting kinetic supporting footage>
+Voiceover: <2-3 sentences, 25-35 words, clear and conversational, driving the story forward>  
+Visuals: <one concise sentence suggesting vivid, grounded footage>
 
-Every beat must explicitly acknowledge or escalate what came before so the script reads as one continuous narrative when combined.
+Every beat must connect to the previous one, forming a cohesive narrative that feels like one story.
 
 Guidelines:
-- Use sharp humor, puns, and fluid, non-repetitive metaphors tailored to the topic.
-- Focus on concise, fact-heavy delivery, avoiding repetition, with dates, names, and laws spelled out.
-- Tailor to a U.S. audience concerned with state rights and democracy, emphasizing urgency and legal clarity.
-- Voiceover must flow as complete sentences—never bullet fragments.
-- Visuals should suggest clear, vivid shots or actions that match the voiceover.
+- Use direct, conversational language, avoiding rhetorical questions, puns, or overly poetic phrasing.
+- Keep it fact-heavy, concise, and specific, spelling out dates, names, and laws clearly.
+- Tailor to a U.S. audience focused on state rights and democracy, emphasizing urgency and clarity.
+- Voiceover must use complete sentences, never fragments or bullet points.
+- Visuals should suggest simple, authentic shots that match the voiceover’s tone.
 - Never mention on-screen text or captions.
 - **${factsInstruction}**
-- Avoid repetitive phrasing (no overusing "imagine" or similar openers).
-- Always ${styleDirective}, keeping engagement high without misleading claims.
-- **${ctaGuideline} In the Final CTA beat, fully incorporate every detail from the provided CTA by paraphrasing it into 2-3 inspiring, action-oriented sentences (25-35 words total). Do not generalize or omit specifics like names, actions, or tags—integrate them seamlessly for a concrete, urgent call to action.**
+- Avoid repetitive words or clichéd openers like "imagine" or "picture."
+- Always ${styleDirective}, keeping the tone grounded and engaging without exaggeration.
+- **${ctaGuideline} In the Final CTA beat, weave the CTA into 2-3 clear, action-oriented sentences (25-35 words total). Include all specifics like names, actions, or tags, delivering a direct, urgent call to action.**
 
 Return only the formatted beats in plain text.`;
 
