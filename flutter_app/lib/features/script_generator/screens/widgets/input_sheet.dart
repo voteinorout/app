@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class InputSheet extends StatefulWidget {
   const InputSheet({
@@ -214,6 +215,36 @@ class _InputSheetState extends State<InputSheet>
                                   isCollapsed: true,
                                   hintText: widget.hintText,
                                 ),
+                                contextMenuBuilder: (
+                                  BuildContext context,
+                                  EditableTextState editableTextState,
+                                ) {
+                                  final List<ContextMenuButtonItem> items =
+                                      <ContextMenuButtonItem>[
+                                    ContextMenuButtonItem(
+                                      label: 'Select',
+                                      onPressed: () {
+                                        try {
+                                          editableTextState.renderEditable
+                                              .selectWord(
+                                            cause: SelectionChangedCause.toolbar,
+                                          );
+                                        } catch (_) {
+                                          editableTextState.selectAll(
+                                            SelectionChangedCause.toolbar,
+                                          );
+                                        }
+                                        editableTextState.hideToolbar();
+                                      },
+                                    ),
+                                    ...editableTextState.contextMenuButtonItems,
+                                  ];
+
+                                  return AdaptiveTextSelectionToolbar.buttonItems(
+                                    anchors: editableTextState.contextMenuAnchors,
+                                    buttonItems: items,
+                                  );
+                                },
                               ),
                             ),
                           ),
