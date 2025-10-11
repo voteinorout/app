@@ -38,8 +38,6 @@ class VoteInOrOutApp extends StatelessWidget {
 
   static const Color _primaryNavy = Color(0xFF031750);
   static const Color _accentBlue = Color(0xFF2B6FEE);
-  static const Color _background = Color(0xFFF4F6FB);
-
   @override
   Widget build(BuildContext context) {
     final ColorScheme baseScheme = ColorScheme.fromSeed(

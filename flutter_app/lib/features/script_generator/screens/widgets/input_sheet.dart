@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class InputSheet extends StatefulWidget {
   const InputSheet({
@@ -128,8 +127,8 @@ class _InputSheetState extends State<InputSheet>
                 behavior: HitTestBehavior.opaque,
                 onTap: _handleDismiss,
                 child: Container(
-                  color: theme.colorScheme.scrim.withOpacity(
-                    0.3 * t.clamp(0.0, 1.0),
+                  color: theme.colorScheme.scrim.withValues(
+                    alpha: (0.3 * t.clamp(0.0, 1.0)),
                   ),
                 ),
               ),
@@ -140,7 +139,6 @@ class _InputSheetState extends State<InputSheet>
                   child: SafeArea(
                     top: false,
                     child: Container(
-                      margin: const EdgeInsets.only(top: 12),
                       padding: EdgeInsets.only(bottom: keyboardInset),
                       width: double.infinity,
                       decoration: BoxDecoration(
@@ -150,8 +148,8 @@ class _InputSheetState extends State<InputSheet>
                         ),
                         boxShadow: <BoxShadow>[
                           BoxShadow(
-                            color: theme.colorScheme.shadow.withOpacity(
-                              0.12 * t.clamp(0.0, 1.0),
+                            color: theme.colorScheme.shadow.withValues(
+                              alpha: (0.12 * t.clamp(0.0, 1.0)),
                             ),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
@@ -159,11 +157,11 @@ class _InputSheetState extends State<InputSheet>
                         ],
                       ),
                       child: Column(
-                        mainAxisSize: MainAxisSize.min,
+                        mainAxisSize: MainAxisSize.max,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(24, 24, 16, 12),
+                            padding: const EdgeInsets.fromLTRB(24, 8, 16, 8),
                             child: Row(
                               children: <Widget>[
                                 const SizedBox(width: 48),
@@ -193,59 +191,57 @@ class _InputSheetState extends State<InputSheet>
                           ),
                           const Divider(height: 1),
                           Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 16,
-                              ),
-                              child: TextField(
-                                controller: widget.controller,
-                                focusNode: widget.focusNode,
-                                keyboardType: TextInputType.multiline,
-                                textCapitalization:
-                                    TextCapitalization.sentences,
-                                minLines: widget.minLines,
-                                maxLines: null,
-                                textAlignVertical: TextAlignVertical.top,
-                                decoration: InputDecoration(
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  disabledBorder: InputBorder.none,
-                                  isCollapsed: true,
-                                  hintText: widget.hintText,
+                            child: TextField(
+                              controller: widget.controller,
+                              focusNode: widget.focusNode,
+                              keyboardType: TextInputType.multiline,
+                              textCapitalization:
+                                  TextCapitalization.sentences,
+                              minLines: widget.minLines,
+                              maxLines: null,
+                              textAlignVertical: TextAlignVertical.top,
+                              decoration: InputDecoration(
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                disabledBorder: InputBorder.none,
+                                isCollapsed: true,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 16,
                                 ),
-                                contextMenuBuilder: (
-                                  BuildContext context,
-                                  EditableTextState editableTextState,
-                                ) {
-                                  final List<ContextMenuButtonItem> items =
-                                      <ContextMenuButtonItem>[
-                                    ContextMenuButtonItem(
-                                      label: 'Select',
-                                      onPressed: () {
-                                        try {
-                                          editableTextState.renderEditable
-                                              .selectWord(
-                                            cause: SelectionChangedCause.toolbar,
-                                          );
-                                        } catch (_) {
-                                          editableTextState.selectAll(
-                                            SelectionChangedCause.toolbar,
-                                          );
-                                        }
-                                        editableTextState.hideToolbar();
-                                      },
-                                    ),
-                                    ...editableTextState.contextMenuButtonItems,
-                                  ];
-
-                                  return AdaptiveTextSelectionToolbar.buttonItems(
-                                    anchors: editableTextState.contextMenuAnchors,
-                                    buttonItems: items,
-                                  );
-                                },
+                                hintText: widget.hintText,
                               ),
+                              contextMenuBuilder: (
+                                BuildContext context,
+                                EditableTextState editableTextState,
+                              ) {
+                                final List<ContextMenuButtonItem> items =
+                                    <ContextMenuButtonItem>[
+                                  ContextMenuButtonItem(
+                                    label: 'Select',
+                                    onPressed: () {
+                                      try {
+                                        editableTextState.renderEditable
+                                            .selectWord(
+                                          cause: SelectionChangedCause.toolbar,
+                                        );
+                                      } catch (_) {
+                                        editableTextState.selectAll(
+                                          SelectionChangedCause.toolbar,
+                                        );
+                                      }
+                                      editableTextState.hideToolbar();
+                                    },
+                                  ),
+                                  ...editableTextState.contextMenuButtonItems,
+                                ];
+
+                                return AdaptiveTextSelectionToolbar.buttonItems(
+                                  anchors: editableTextState.contextMenuAnchors,
+                                  buttonItems: items,
+                                );
+                              },
                             ),
                           ),
                         ],
