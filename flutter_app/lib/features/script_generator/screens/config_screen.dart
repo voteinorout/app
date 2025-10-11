@@ -1,4 +1,3 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -26,7 +25,6 @@ class _ConfigScreenState extends State<ConfigScreen>
   final FocusNode _topicFocusNode = FocusNode();
   final FocusNode _ctaFocusNode = FocusNode();
   late final ScrollController _scriptScrollController;
-  late final TapGestureRecognizer _chatGptRecognizer;
 
   static const Map<String, int> _styleTemperatureDefaults = <String, int>{
     'Educational': 3,
@@ -34,6 +32,8 @@ class _ConfigScreenState extends State<ConfigScreen>
     'Comedy': 8,
   };
   static final Uri _chatGptUri = Uri.parse('https://chatgpt.com/');
+  static final Uri _claudeUri = Uri.parse('https://claude.ai/');
+  static final Uri _geminiUri = Uri.parse('https://gemini.google.com/');
 
   late TabController _tabController;
   String _style = 'Educational';
@@ -50,7 +50,6 @@ class _ConfigScreenState extends State<ConfigScreen>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _scriptScrollController = ScrollController();
-    _chatGptRecognizer = TapGestureRecognizer()..onTap = _launchChatGpt;
   }
 
   @override
@@ -60,7 +59,6 @@ class _ConfigScreenState extends State<ConfigScreen>
     _topicFocusNode.dispose();
     _ctaFocusNode.dispose();
     _scriptScrollController.dispose();
-    _chatGptRecognizer.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -162,26 +160,23 @@ class _ConfigScreenState extends State<ConfigScreen>
     }
   }
 
-  Future<void> _launchChatGpt() async {
+  void _showExternalLaunchError() {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Unable to open link.')));
+  }
+
+  Future<void> _launchExternalTool(Uri uri) async {
     try {
-      final bool launched = await launchUrl(
-        _chatGptUri,
-        mode: LaunchMode.externalApplication,
-      );
+      final bool launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!launched && mounted) {
-        _showChatGptLaunchError();
+        _showExternalLaunchError();
       }
     } catch (_) {
       if (mounted) {
-        _showChatGptLaunchError();
+        _showExternalLaunchError();
       }
     }
-  }
-
-  void _showChatGptLaunchError() {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Unable to open ChatGPT.')));
   }
 
   void _loadSavedScript(GeneratedScript script) {
@@ -934,55 +929,74 @@ class _ConfigScreenState extends State<ConfigScreen>
                                           ),
                                           const SizedBox(height: 32),
                                           Text(
-                                            'Bring this script to the next level',
-                                            style: theme.textTheme.bodySmall
+                                            'Now let’s make it great…',
+                                            style: theme.textTheme.titleMedium
                                                 ?.copyWith(
                                                   fontWeight: FontWeight.w700,
-                                                  color: theme
-                                                      .colorScheme
-                                                      .onSurface
-                                                      .withValues(alpha: 0.6),
                                                 ),
                                           ),
                                           const SizedBox(height: 8),
-                                          RichText(
-                                            text: TextSpan(
-                                              style: theme.textTheme.bodySmall
+                                          Text(
+                                            'Take this script into your favorite AI tool for polish—their models can tighten pacing, add flair, or tweak tone.',
+                                            style: theme.textTheme.bodyMedium
+                                                ?.copyWith(
+                                                  color: theme
+                                                      .colorScheme
+                                                      .onSurface
+                                                      .withValues(alpha: 0.75),
+                                                ),
+                                          ),
+                                          const SizedBox(height: 20),
+                                          OutlinedButton(
+                                            onPressed: () =>
+                                                _launchExternalTool(_chatGptUri),
+                                            style: OutlinedButton.styleFrom(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                vertical: 18,
+                                              ),
+                                              textStyle: theme
+                                                  .textTheme.titleSmall
                                                   ?.copyWith(
-                                                    color: theme
-                                                        .colorScheme
-                                                        .onSurface
-                                                        .withValues(alpha: 0.6),
-                                                    height: 1.4,
+                                                    fontWeight: FontWeight.w700,
                                                   ),
-                                              children: <InlineSpan>[
-                                                const TextSpan(
-                                                  text:
-                                                      'Paste this into your favorite AI tool (e.g. ',
-                                                ),
-                                                TextSpan(
-                                                  text: 'ChatGPT',
-                                                  style: theme
-                                                      .textTheme
-                                                      .bodySmall
-                                                      ?.copyWith(
-                                                        color: theme
-                                                            .colorScheme
-                                                            .primary,
-                                                        height: 1.4,
-                                                        decoration:
-                                                            TextDecoration
-                                                                .underline,
-                                                      ),
-                                                  recognizer:
-                                                      _chatGptRecognizer,
-                                                ),
-                                                const TextSpan(
-                                                  text:
-                                                      ') and ask it to improve clarity and sharpen your message.',
-                                                ),
-                                              ],
                                             ),
+                                            child: const Text('OpenAI ChatGPT'),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          OutlinedButton(
+                                            onPressed: () =>
+                                                _launchExternalTool(_claudeUri),
+                                            style: OutlinedButton.styleFrom(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                vertical: 18,
+                                              ),
+                                              textStyle: theme
+                                                  .textTheme.titleSmall
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                            ),
+                                            child:
+                                                const Text('Anthropic Claude'),
+                                          ),
+                                          const SizedBox(height: 12),
+                                          OutlinedButton(
+                                            onPressed: () =>
+                                                _launchExternalTool(_geminiUri),
+                                            style: OutlinedButton.styleFrom(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                vertical: 18,
+                                              ),
+                                              textStyle: theme
+                                                  .textTheme.titleSmall
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                            ),
+                                            child: const Text('Google Gemini'),
                                           ),
                                         ],
                                       ),
