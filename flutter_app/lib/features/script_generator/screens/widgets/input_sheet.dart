@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 class InputSheet extends StatefulWidget {
   const InputSheet({
@@ -128,8 +127,8 @@ class _InputSheetState extends State<InputSheet>
                 behavior: HitTestBehavior.opaque,
                 onTap: _handleDismiss,
                 child: Container(
-                  color: theme.colorScheme.scrim.withOpacity(
-                    0.3 * t.clamp(0.0, 1.0),
+                  color: theme.colorScheme.scrim.withValues(
+                    alpha: (0.3 * t.clamp(0.0, 1.0)),
                   ),
                 ),
               ),
@@ -149,8 +148,8 @@ class _InputSheetState extends State<InputSheet>
                         ),
                         boxShadow: <BoxShadow>[
                           BoxShadow(
-                            color: theme.colorScheme.shadow.withOpacity(
-                              0.12 * t.clamp(0.0, 1.0),
+                            color: theme.colorScheme.shadow.withValues(
+                              alpha: (0.12 * t.clamp(0.0, 1.0)),
                             ),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
