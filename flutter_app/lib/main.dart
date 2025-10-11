@@ -71,7 +71,7 @@ class VoteInOrOutApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: colorScheme,
-        scaffoldBackgroundColor: _background,
+        scaffoldBackgroundColor: Colors.white,
         useMaterial3: true,
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.white,
@@ -108,10 +108,11 @@ class VoteInOrOutApp extends StatelessWidget {
         ),
         cardTheme: CardThemeData(
           color: Colors.white,
-          elevation: 2,
-          shadowColor: _primaryNavy.withValues(alpha: 0.08),
+          elevation: 0,
+          shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
+            side: const BorderSide(color: Color(0xFFE5E7EA)),
           ),
           margin: const EdgeInsets.symmetric(vertical: 12),
         ),
@@ -131,8 +132,12 @@ class VoteInOrOutApp extends StatelessWidget {
           ),
         ),
         textTheme: Typography.material2021().black.apply(
-          bodyColor: const Color(0xFF1B1D28),
-          displayColor: const Color(0xFF1B1D28),
+          bodyColor: Colors.black,
+          displayColor: Colors.black,
+        ).copyWith(
+          bodyMedium: const TextStyle(fontSize: 16),
+          bodyLarge: const TextStyle(fontSize: 16),
+          bodySmall: const TextStyle(fontSize: 14),
         ),
       ),
       initialRoute: '/splash',
